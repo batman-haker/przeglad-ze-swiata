@@ -1,0 +1,31 @@
+### INSTRUKCJA — JAK WKLEJAC POSTY ###
+#
+# 1. Kazdy post zaczyna sie od linii "=== POST ==="
+# 2. Pod spodem 3 linie metadanych (URL, DATA, GODZINA), potem pusta linia
+# 3. Potem tresc posta - moze byc wieloliniowa
+# 4. Linie zaczynajace sie od # sa ignorowane (to komentarze)
+# 5. Kolejnosc postow nie ma znaczenia - skrypt sortuje po dacie
+#
+# FORMAT DATY:  RRRR-MM-DD  (np. 2025-05-11)
+# FORMAT GODZINY: GG:MM      (np. 18:40)
+# Jesli nie znasz dokladnej godziny, wpisz godzine ze "Skrotu info" w tresci.
+#
+# Ponizej jeden przykladowy post. Usun go gdy zaczniesz wklejac wlasne,
+# albo zostaw - skrypt rozpozna go po numerze posta.
+#
+########################################
+
+=== POST ===
+URL: https://x.com/GPW_Trader2022/status/2053877124969415086
+DATA: 2025-05-11
+GODZINA: 18:40
+
+Skrot info 18:40 nr ze Swiata. Poniedzialek - Iran: Uran nie podlega zadnym negocjacjom - Putin i Trump rozmawiali - Floryda chce oskarzyc ChatGPT za morderstwo - Trump zniesie 18% podatek federalny od paliw - Trump nie zaprosil Huang z Nvidia do Chin - Verivox Bloomberg: Niemcow nie stac na energie, zuzywaja o 52% mniej pradu, 55% nie ogrzewa, 48% rezygnuje z samochodu przez ceny paliw - 20 krajow pomaga Ukrainie budowac dorny - OPEC produkuje najmniej od 20 lat - Trump konferencja o 18:10 a) dyplomacja z Iranem wciaz mozliwa b) benzyna i ropa spadna jak kamien po porozumieniu c) zmniejsze podatki federalne od benzyny d) ciesze sie ze wyszlismy z WHO e) Szanuje Xi mam nadzieje ze on mnie tez f) rozejm z Iranem niewiarygodnie slaby g) Iran nie ma broni marynarki lotnictwa h) wojna z Iranem wkrotce sie skonczy i) rozwazam ponownie Projektu Wolnosc - generalowie armii rzadowej dezerteruja - Chinskie stocznie buduja 54% wszystkich statkow na swiecie - sprzedaz Rheinmetall +8% w I kw. - KNF: ujawnienie na X zmian w zarzadzie KGHM nie bylo informacja poufna - EY: 50% firm rozczarowanych efektami AI - Polska negocjuje dostawy ropy do Schwedt
+
+=== POST ===
+# Drugi post wklej tutaj. Skopiuj caly URL z X (kliknij date posta).
+# URL: 
+# DATA: 
+# GODZINA: 
+#
+# (tresc posta)

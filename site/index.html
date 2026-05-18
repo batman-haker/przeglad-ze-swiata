@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Przegląd ze świata</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- D3 -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+</head>
+<body>
+
+  <!-- Banner -->
+  <header class="site-banner">
+    <img src="przegladzeswiata.png" alt="Przegląd ze świata" class="banner-img">
+  </header>
+
+  <!-- Pasek nawigacji + meta -->
+  <nav class="viewnav">
+    <div class="viewnav-inner">
+      <button class="view-btn active" data-view="timeline">📋 Tablica</button>
+      <button class="view-btn" data-view="dashboard">📊 Statystyki</button>
+      <button class="view-btn" data-view="map">🗺️ Mapa</button>
+      <button class="view-btn" data-view="graph">🕸️ Powiązania</button>
+      <button class="view-btn" data-view="iran">🔥 Iran / Ormuz</button>
+      <span class="viewnav-meta">
+        <span id="event-count">—</span> wydarzeń
+        <span class="sep">·</span>
+        <span id="last-update">—</span>
+      </span>
+    </div>
+  </nav>
+
+  <!-- ════════════════ WIDOK: TABLICA ════════════════ -->
+  <div id="view-timeline" class="view active">
+
+    <div class="toolbar">
+      <div class="toolbar-inner">
+        <div class="filters" id="filters">
+          <button class="filter-btn active" data-filter="all">Wszystkie</button>
+          <button class="filter-btn" data-filter="geopolityka">Geopolityka</button>
+          <button class="filter-btn" data-filter="gospodarka">Gospodarka</button>
+          <button class="filter-btn" data-filter="rynki">Rynki</button>
+          <button class="filter-btn" data-filter="energia">Energia</button>
+          <button class="filter-btn" data-filter="technologia">Technologia</button>
+          <button class="filter-btn" data-filter="polska">Polska</button>
+        </div>
+        <div class="search-wrap">
+          <input type="search" id="search" placeholder="Szukaj…" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <div class="spotlight" id="spotlight" hidden>
+      <div class="spotlight-inner">
+        <div class="spotlight-label">🔥 Główny wątek</div>
+        <div class="spotlight-title" id="spotlight-title"></div>
+        <div class="spotlight-events" id="spotlight-events"></div>
+      </div>
+    </div>
+
+    <main class="main">
+      <div class="timeline" id="timeline">
+        <div class="loading">Ładowanie wydarzeń…</div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ════════════════ WIDOK: DASHBOARD ════════════════ -->
+  <div id="view-dashboard" class="view">
+    <div class="dash-grid">
+
+      <div class="dash-card">
+        <div class="dash-title">Kategorie</div>
+        <canvas id="chart-kategorie"></canvas>
+      </div>
+
+      <div class="dash-card">
+        <div class="dash-title">Waga wydarzeń</div>
+        <canvas id="chart-waga"></canvas>
+      </div>
+
+      <div class="dash-card dash-wide">
+        <div class="dash-title">Aktywność per dzień</div>
+        <canvas id="chart-aktywnosc"></canvas>
+      </div>
+
+      <div class="dash-card">
+        <div class="dash-title">Top 10 podmiotów</div>
+        <canvas id="chart-podmioty"></canvas>
+      </div>
+
+      <div class="dash-card">
+        <div class="dash-title">Typy wydarzeń</div>
+        <canvas id="chart-typy"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════ WIDOK: MAPA ════════════════ -->
+  <div id="view-map" class="view">
+    <div id="leaflet-map"></div>
+    <div class="map-legend" id="map-legend"></div>
+  </div>
+
+  <!-- ════════════════ WIDOK: GRAF ════════════════ -->
+  <div id="view-graph" class="view">
+    <div class="graph-info">Węzły = podmioty · Krawędzie = wspólne wydarzenie · Rozmiar = częstotliwość</div>
+    <svg id="graph-svg"></svg>
+    <div class="graph-tooltip" id="graph-tooltip"></div>
+  </div>
+
+  <!-- ════════════════ WIDOK: IRAN ════════════════ -->
+  <div id="view-iran" class="view">
+    <div class="iran-header">
+      <div class="iran-title">☢️ Wątek: Iran / Ormuz / Konflikt</div>
+      <div class="iran-sub" id="iran-count">—</div>
+    </div>
+    <div class="iran-timeline" id="iran-timeline"></div>
+  </div>
+
+  <footer class="footer">
+    Źródło: <a href="https://x.com/GPW_Trader2022" target="_blank">@GPW_Trader2022</a>
+    · Tablica Świat
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wydarzenie na tablicy informacyjnej",
+  "description": "Pojedyncze atomowe wydarzenie wyekstrahowane ze skrotu info GPW_Trader2022",
+  "type": "object",
+  "required": ["id", "post_url", "datetime", "kategoria", "waga", "haslo", "rozwiniecie", "raw_fragment"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unikalny identyfikator: RRRRMMDD-GGMM-NN (data-godzina posta-numer wydarzenia)",
+      "pattern": "^[0-9]{8}-[0-9]{4}-[0-9]{2}$"
+    },
+    "post_url": {
+      "type": "string",
+      "description": "Pelny URL posta zrodlowego na X"
+    },
+    "post_index": {
+      "type": "integer",
+      "description": "Numer porzadkowy posta w posts_raw.txt (do debugowania)"
+    },
+    "datetime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data i godzina posta w formacie ISO 8601"
+    },
+    "kategoria": {
+      "type": "string",
+      "enum": ["geopolityka", "gospodarka", "rynki", "energia", "technologia", "polska"],
+      "description": "Glowna kategoria wydarzenia (jedna, do filtrow)"
+    },
+    "watek": {
+      "type": ["string", "null"],
+      "description": "Identyfikator watku tematycznego, np. iran-2025. null jesli wydarzenie nie nalezy do zadnego watku"
+    },
+    "waga": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "Waga wydarzenia: high=wojny/decyzje bankow centralnych, medium=istotne, low=pojedyncza statystyka"
+    },
+    "haslo": {
+      "type": "string",
+      "description": "Krotki naglowek wydarzenia, max ~80 znakow, poczyszczony z literowek"
+    },
+    "rozwiniecie": {
+      "type": "string",
+      "description": "Rozwiniecie hasla w 2-4 zdaniach: kontekst, znaczenie, tlo. Pisane przez AI."
+    },
+    "punkty": {
+      "type": ["array", "null"],
+      "items": {"type": "string"},
+      "description": "Lista podpunktow dla wydarzen zlozonych (np. wypowiedzi z konferencji a/b/c/...). null dla wydarzen prostych."
+    },
+    "podmioty": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Kraje, firmy, osoby, organizacje wymienione w wydarzeniu"
+    },
+    "region": {
+      "type": ["string", "null"],
+      "description": "Region geograficzny, np. Bliski Wschod, Europa, Azja, USA"
+    },
+    "typ": {
+      "type": "string",
+      "enum": ["deklaracja", "decyzja", "dane", "konflikt", "umowa", "prognoza", "wydarzenie"],
+      "description": "Typ informacji"
+    },
+    "raw_fragment": {
+      "type": "string",
+      "description": "Oryginalny urywek tekstu z posta - bezpiecznik do weryfikacji interpretacji AI"
+    }
+  }
+}
