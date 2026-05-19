@@ -31,6 +31,30 @@ TAIL_REF = re.compile(
 )
 URL_LINE = re.compile(r'^\s*https?://')
 
+# Fragmenty redakcyjne — odsyłacze, zachęty do czytania innych skrótów
+EDITORIAL_RE = re.compile(
+    r'(zobacz\s+skr[oó]t'
+    r'|zapraszam\s+(do|na)'
+    r'|skr[oó]t(y)?\s+(nocn|porann|wieczorn|nr\s*\d|numer\s*\d)'
+    r'|nocne\s+numer'
+    r'|poranne\s+numer'
+    r'|wi[eę]cej\s+w\s+kolejn'
+    r'|dzie[nń]\s+dobry.*skr[oó]t'
+    r'|to\s+ju[zż]\s+wszystko)',
+    re.IGNORECASE,
+)
+
+
+def is_editorial(text: str) -> bool:
+    """Zwraca True jeśli fragment to komunikat redakcyjny, nie news."""
+    text = text.strip()
+    if EDITORIAL_RE.search(text):
+        return True
+    # Bardzo krótki fragment (< 35 znaków) wspominający skróty
+    if len(text) < 35 and re.search(r'skr[oó]t', text, re.IGNORECASE):
+        return True
+    return False
+
 # Podpunkty a) b) c) ... i) — poprzedzone word-boundary
 SUBPOINT_RE = re.compile(r'(?<!\w)([a-i])\)\s')
 
@@ -200,6 +224,8 @@ def parse_content(content: str, post_meta: dict) -> list[dict]:
 
     fragments = []
     for nn, frag in enumerate(raw_fragments, 1):
+        if is_editorial(frag):
+            continue
         base, punkty = extract_subpoints(frag)
         fragments.append({
             **post_meta,

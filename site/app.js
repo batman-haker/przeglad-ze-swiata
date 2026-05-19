@@ -12,7 +12,6 @@ let searchQuery  = '';
 // Charts & map state
 let chartsInit   = false;
 let mapInit      = false;
-let graphInit    = false;
 let leafletMap   = null;
 
 // ============================================================
@@ -35,7 +34,7 @@ async function init() {
   setupSearch();
   renderTimeline();
   updateMeta();
-  renderSpotlight();
+  setupEntityModal();
 }
 
 // ============================================================
@@ -54,9 +53,9 @@ function setupViewNav() {
       document.getElementById('view-' + view).classList.add('active');
 
       if (view === 'dashboard' && !chartsInit) { renderDashboard(); chartsInit = true; }
-      if (view === 'map')       { renderMap(); }
-      if (view === 'graph' && !graphInit) { renderGraph(); graphInit = true; }
-      if (view === 'iran')      { renderIran(); }
+      if (view === 'map')     { renderMap(); }
+      if (view === 'analiza') { renderAnaliza(); }
+      if (view === 'iran')    { renderIran(); }
     });
   });
 }
@@ -142,8 +141,18 @@ function setupSearch() {
   });
 }
 
+const EDITORIAL_RE = /zobacz\s+skr[oó]t|zapraszam\s+(do|na)|skr[oó]ty?\s+(nocn|porann|wieczorn|numer\s*\d|nr\s*\d)|nocne\s+numer|poranne\s+numer|to\s+ju[zż]\s+wszystko/i;
+
+function isEditorial(e) {
+  const txt = (e.raw_fragment || e.haslo || '');
+  if (EDITORIAL_RE.test(txt)) return true;
+  if (txt.length < 35 && /skr[oó]t/i.test(txt)) return true;
+  return false;
+}
+
 function filtered() {
   return allEvents.filter(e => {
+    if (isEditorial(e)) return false;
     if (activeFilter !== 'all' && e.kategoria !== activeFilter) return false;
     if (searchQuery) {
       const hay = [e.haslo, e.rozwiniecie, ...(e.podmioty || [])].join(' ').toLowerCase();
@@ -199,7 +208,9 @@ function buildCard(event) {
   card.dataset.id = event.id;
 
   const time     = event.datetime.slice(11, 16);
-  const podmioty = (event.podmioty || []).slice(0, 3).join(', ');
+  const podmiotyChips = (event.podmioty || []).slice(0, 3)
+    .map(p => `<span class="tag-podmioty" data-entity="${esc(p)}">${esc(p)}</span>`)
+    .join('');
   const katClass = `kat-${event.kategoria}`;
 
   const punktyHtml = (event.punkty && event.punkty.length)
@@ -214,7 +225,7 @@ function buildCard(event) {
         <div class="card-tags">
           <span class="tag-kat ${katClass}">${event.kategoria}</span>
           ${event.watek ? `<span class="tag-watek">${event.watek}</span>` : ''}
-          ${podmioty ? `<span class="tag-podmioty">${esc(podmioty)}</span>` : ''}
+          ${podmiotyChips}
         </div>
       </div>
       <span class="card-time">${time}</span>
@@ -535,111 +546,215 @@ function renderMap() {
 }
 
 // ============================================================
-// Graf powiazań — D3
+// Analiza dnia — AI-powered (analyses.json)
 // ============================================================
 
-function renderGraph() {
-  const svg = document.getElementById('graph-svg');
-  const W = svg.clientWidth || 900;
-  const H = svg.clientHeight || 600;
+async function renderAnaliza() {
+  const container = document.getElementById('analiza-container');
+  container.innerHTML = '<div class="no-results">Ładowanie analizy…</div>';
 
-  // build nodes & edges
-  const nodeMap = new Map();
-  const edgeMap = new Map();
+  let analyses = [];
+  try {
+    const resp = await fetch('analyses.json');
+    if (resp.ok) analyses = await resp.json();
+  } catch (e) {}
 
-  allEvents.forEach(e => {
-    const ps = (e.podmioty || []).filter(Boolean);
-    ps.forEach(p => {
-      if (!nodeMap.has(p)) nodeMap.set(p, { id: p, count: 0, kat: e.kategoria });
-      nodeMap.get(p).count++;
-    });
-    for (let i = 0; i < ps.length; i++) {
-      for (let j = i + 1; j < ps.length; j++) {
-        const key = [ps[i], ps[j]].sort().join('|||');
-        edgeMap.set(key, (edgeMap.get(key) || 0) + 1);
-      }
+  container.innerHTML = '';
+
+  if (!analyses.length) {
+    container.innerHTML = '<div class="no-results">Brak analiz AI. Uruchom <code>python scripts/analyze.py</code> na serwerze.</div>';
+    return;
+  }
+
+  analyses.forEach(a => {
+    const dayEl = document.createElement('div');
+    dayEl.className = 'analiza-day';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'analiza-day-header';
+    header.innerHTML = `
+      <span class="analiza-day-date">${esc(a.date_pl)}</span>
+      <span class="analiza-day-count">${a.events_count} wydarzeń</span>`;
+    dayEl.appendChild(header);
+
+    // Nagłówek AI
+    if (a.naglowek) {
+      const nagl = document.createElement('div');
+      nagl.className = 'analiza-naglowek';
+      nagl.textContent = a.naglowek;
+      dayEl.appendChild(nagl);
     }
+
+    // Synteza
+    if (a.synteza) {
+      const sec = document.createElement('div');
+      sec.className = 'analiza-section';
+      sec.innerHTML = `
+        <div class="analiza-section-label">Synteza</div>
+        <div class="analiza-section-text">${esc(a.synteza)}</div>`;
+      dayEl.appendChild(sec);
+    }
+
+    // Kontekst globalny + Perspektywa
+    const twoCols = document.createElement('div');
+    twoCols.className = 'analiza-two-col';
+    if (a.kontekst_globalny) {
+      const sec = document.createElement('div');
+      sec.className = 'analiza-section';
+      sec.innerHTML = `
+        <div class="analiza-section-label">🌍 Kontekst globalny</div>
+        <div class="analiza-section-text">${esc(a.kontekst_globalny)}</div>`;
+      twoCols.appendChild(sec);
+    }
+    if (a.perspektywa) {
+      const sec = document.createElement('div');
+      sec.className = 'analiza-section';
+      sec.innerHTML = `
+        <div class="analiza-section-label">🔮 Perspektywa</div>
+        <div class="analiza-section-text">${esc(a.perspektywa)}</div>`;
+      twoCols.appendChild(sec);
+    }
+    if (twoCols.children.length) dayEl.appendChild(twoCols);
+
+    // Kluczowe napięcia
+    const tensions = a['kluczowe_napięcia'] || a['kluczowe_napiecia'] || [];
+    if (tensions.length) {
+      const tenSec = document.createElement('div');
+      tenSec.className = 'analiza-tensions';
+      tenSec.innerHTML = `<div class="analiza-section-label">⚡ Kluczowe napięcia</div>`;
+      tensions.forEach(t => {
+        const chip = document.createElement('span');
+        chip.className = 'analiza-tension-chip';
+        chip.textContent = t;
+        tenSec.appendChild(chip);
+      });
+      dayEl.appendChild(tenSec);
+    }
+
+    container.appendChild(dayEl);
+  });
+}
+
+// ============================================================
+// Modal: Podmiot
+// ============================================================
+
+let entityChart = null;
+
+function setupEntityModal() {
+  document.getElementById('entity-modal-close')
+    ?.addEventListener('click', closeEntityModal);
+  document.querySelector('.entity-modal-backdrop')
+    ?.addEventListener('click', closeEntityModal);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeEntityModal();
+  });
+  // Delegacja kliknięć na tagi podmiotów
+  document.addEventListener('click', e => {
+    const tag = e.target.closest('[data-entity]');
+    if (tag) { e.stopPropagation(); openEntityView(tag.dataset.entity); }
+  });
+}
+
+function closeEntityModal() {
+  document.getElementById('entity-modal').classList.add('hidden');
+}
+
+function openEntityView(name) {
+  const evs = allEvents
+    .filter(e => (e.podmioty || []).includes(name))
+    .slice()
+    .sort((a, b) => b.datetime.localeCompare(a.datetime));
+
+  if (!evs.length) return;
+
+  document.getElementById('entity-modal-name').textContent = name;
+
+  // Meta
+  const dateFirst = evs[evs.length - 1].datetime.slice(0, 10);
+  const dateLast  = evs[0].datetime.slice(0, 10);
+  const katCount  = {};
+  evs.forEach(e => { katCount[e.kategoria] = (katCount[e.kategoria] || 0) + 1; });
+  const topKats = Object.entries(katCount).sort((a, b) => b[1] - a[1]);
+  document.getElementById('entity-modal-meta').textContent =
+    `${evs.length} wydarzeń · ${dateFirst} — ${dateLast}`;
+
+  // Body
+  const body = document.getElementById('entity-modal-body');
+  body.innerHTML = '';
+
+  // Kategorie
+  const catsEl = document.createElement('div');
+  catsEl.className = 'entity-cats';
+  topKats.forEach(([k, n]) => {
+    const pill = document.createElement('span');
+    pill.className = `entity-cat-pill tag-kat kat-${k}`;
+    pill.textContent = `${k} · ${n}`;
+    catsEl.appendChild(pill);
+  });
+  body.appendChild(catsEl);
+
+  // Lista wydarzeń
+  evs.forEach(e => {
+    const item = document.createElement('div');
+    item.className = 'entity-event-item';
+    const time = e.datetime.slice(0, 16).replace('T', ' ');
+    const otherPodmioty = (e.podmioty || [])
+      .filter(p => p !== name).slice(0, 2)
+      .map(p => `<span class="tag-podmioty" data-entity="${esc(p)}">${esc(p)}</span>`)
+      .join('');
+    item.innerHTML = `
+      <div class="entity-event-time">${time}</div>
+      <div class="entity-event-content">
+        <div class="entity-event-haslo">${esc(e.haslo)}</div>
+        <div class="entity-event-rozw">${esc(e.rozwiniecie)}</div>
+        <div class="entity-event-tags">
+          <span class="tag-kat kat-${e.kategoria}">${e.kategoria}</span>
+          <span class="entity-waga-dot ${e.waga}"></span>
+          ${otherPodmioty}
+        </div>
+      </div>`;
+    body.appendChild(item);
   });
 
-  // filter to top 60 nodes
-  const nodes = [...nodeMap.values()]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 60);
-  const nodeIds = new Set(nodes.map(n => n.id));
+  document.getElementById('entity-modal').classList.remove('hidden');
+  body.scrollTop = 0;
 
-  const links = [...edgeMap.entries()]
-    .map(([key, w]) => {
-      const [s, t] = key.split('|||');
-      return { source: s, target: t, weight: w };
-    })
-    .filter(l => nodeIds.has(l.source) && nodeIds.has(l.target) && l.weight >= 2);
+  // Wykres aktywności
+  const canvas = document.getElementById('entity-chart');
+  if (entityChart) { entityChart.destroy(); entityChart = null; }
 
-  if (!nodes.length) return;
+  const dayCounts = {};
+  evs.forEach(e => {
+    const d = e.datetime.slice(0, 10);
+    dayCounts[d] = (dayCounts[d] || 0) + 1;
+  });
+  const days = Object.keys(dayCounts).sort();
 
-  const d3svg = d3.select('#graph-svg')
-    .attr('viewBox', `0 0 ${W} ${H}`);
-  d3svg.selectAll('*').remove();
-
-  const g = d3svg.append('g');
-
-  // zoom
-  d3svg.call(d3.zoom().scaleExtent([.3, 4]).on('zoom', e => g.attr('transform', e.transform)));
-
-  const sim = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d => d.id).distance(80).strength(0.4))
-    .force('charge', d3.forceManyBody().strength(-120))
-    .force('center', d3.forceCenter(W / 2, H / 2))
-    .force('collision', d3.forceCollide(d => rScale(d.count) + 3));
-
-  const maxCount = d3.max(nodes, d => d.count) || 1;
-  const rScale = count => 4 + (count / maxCount) * 18;
-
-  const tooltip = document.getElementById('graph-tooltip');
-
-  const link = g.append('g').selectAll('line')
-    .data(links).join('line')
-    .attr('stroke', '#2a2f42')
-    .attr('stroke-width', d => Math.min(d.weight, 5))
-    .attr('stroke-opacity', 0.6);
-
-  const node = g.append('g').selectAll('circle')
-    .data(nodes).join('circle')
-    .attr('r', d => rScale(d.count))
-    .attr('fill', d => CAT_COLORS[d.kat] || '#3b82f6')
-    .attr('fill-opacity', 0.8)
-    .attr('stroke', '#0f1117')
-    .attr('stroke-width', 1.5)
-    .style('cursor', 'pointer')
-    .on('mouseover', (event, d) => {
-      tooltip.style.opacity = '1';
-      tooltip.innerHTML = `<b>${d.id}</b><br>${d.count} wydarzen`;
-    })
-    .on('mousemove', event => {
-      tooltip.style.left = (event.clientX + 12) + 'px';
-      tooltip.style.top  = (event.clientY - 28) + 'px';
-    })
-    .on('mouseout', () => { tooltip.style.opacity = '0'; })
-    .call(d3.drag()
-      .on('start', (event, d) => { if (!event.active) sim.alphaTarget(.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag',  (event, d) => { d.fx = event.x; d.fy = event.y; })
-      .on('end',   (event, d) => { if (!event.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
-    );
-
-  const label = g.append('g').selectAll('text')
-    .data(nodes.filter(d => d.count >= 3)).join('text')
-    .text(d => d.id)
-    .attr('fill', '#cbd5e1')
-    .attr('font-size', d => Math.min(11, 7 + rScale(d.count) * 0.4))
-    .attr('text-anchor', 'middle')
-    .attr('dy', '0.35em')
-    .style('pointer-events', 'none');
-
-  sim.on('tick', () => {
-    link
-      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-    node.attr('cx', d => d.x).attr('cy', d => d.y);
-    label.attr('x', d => d.x).attr('y', d => d.y + rScale(d.count) + 10);
+  entityChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [{
+        data: days.map(d => dayCounts[d]),
+        backgroundColor: 'rgba(59,130,246,.55)',
+        borderColor: 'rgba(59,130,246,.9)',
+        borderWidth: 1,
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      animation: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        title: items => items[0].label,
+        label:  item  => `${item.raw} wydarzeń`,
+      }}},
+      scales: {
+        x: { ticks: { color: '#8892a4', font: { size: 10 }, maxTicksLimit: 10 }, grid: { color: '#2a2f42' } },
+        y: { ticks: { color: '#8892a4', precision: 0 }, grid: { color: '#2a2f42' } },
+      },
+    },
   });
 }
 

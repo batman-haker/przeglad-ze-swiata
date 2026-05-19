@@ -13,8 +13,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- D3 -->
-  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 </head>
 <body>
 
@@ -29,7 +27,7 @@
       <button class="view-btn active" data-view="timeline">📋 Tablica</button>
       <button class="view-btn" data-view="dashboard">📊 Statystyki</button>
       <button class="view-btn" data-view="map">🗺️ Mapa</button>
-      <button class="view-btn" data-view="graph">🕸️ Powiązania</button>
+      <button class="view-btn" data-view="analiza">📅 Analiza dnia</button>
       <button class="view-btn" data-view="iran">🔥 Iran / Ormuz</button>
       <span class="viewnav-meta">
         <span id="event-count">—</span> wydarzeń
@@ -56,14 +54,6 @@
         <div class="search-wrap">
           <input type="search" id="search" placeholder="Szukaj…" autocomplete="off">
         </div>
-      </div>
-    </div>
-
-    <div class="spotlight" id="spotlight" hidden>
-      <div class="spotlight-inner">
-        <div class="spotlight-label">🔥 Główny wątek</div>
-        <div class="spotlight-title" id="spotlight-title"></div>
-        <div class="spotlight-events" id="spotlight-events"></div>
       </div>
     </div>
 
@@ -113,11 +103,9 @@
     <div class="map-legend" id="map-legend"></div>
   </div>
 
-  <!-- ════════════════ WIDOK: GRAF ════════════════ -->
-  <div id="view-graph" class="view">
-    <div class="graph-info">Węzły = podmioty · Krawędzie = wspólne wydarzenie · Rozmiar = częstotliwość</div>
-    <svg id="graph-svg"></svg>
-    <div class="graph-tooltip" id="graph-tooltip"></div>
+  <!-- ════════════════ WIDOK: ANALIZA DNIA ════════════════ -->
+  <div id="view-analiza" class="view">
+    <div class="analiza-wrap" id="analiza-container"></div>
   </div>
 
   <!-- ════════════════ WIDOK: IRAN ════════════════ -->
@@ -127,6 +115,22 @@
       <div class="iran-sub" id="iran-count">—</div>
     </div>
     <div class="iran-timeline" id="iran-timeline"></div>
+  </div>
+
+  <!-- Modal: Podmiot -->
+  <div id="entity-modal" class="entity-modal hidden" role="dialog" aria-modal="true">
+    <div class="entity-modal-backdrop"></div>
+    <div class="entity-modal-panel">
+      <div class="entity-modal-header">
+        <div>
+          <div class="entity-modal-name" id="entity-modal-name"></div>
+          <div class="entity-modal-meta" id="entity-modal-meta"></div>
+        </div>
+        <button class="entity-modal-close" id="entity-modal-close" aria-label="Zamknij">✕</button>
+      </div>
+      <canvas id="entity-chart" class="entity-chart-canvas"></canvas>
+      <div class="entity-modal-body" id="entity-modal-body"></div>
+    </div>
   </div>
 
   <footer class="footer">
