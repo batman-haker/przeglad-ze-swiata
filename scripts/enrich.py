@@ -19,6 +19,7 @@ Wynik:
 Cache: fragmenty już w events.json (wg post_url + fragment_nn) są pomijane.
 """
 
+import difflib
 import json
 import sys
 import time
@@ -254,6 +255,26 @@ def merge(frag: dict, enriched: dict, global_nn: int) -> dict:
     }
 
 
+DEDUP_THRESHOLD = 0.78
+
+
+def _haslo_norm(text: str) -> str:
+    """Normalizuje hasło do porównania fuzzy."""
+    import unicodedata
+    text = unicodedata.normalize("NFC", text).lower()
+    return " ".join(text.split())
+
+
+def _is_duplicate(haslo: str, known_hasla: list[str]) -> bool:
+    """Zwraca True jeśli hasło jest zbyt podobne do któregokolwiek z known_hasla."""
+    norm = _haslo_norm(haslo)
+    for existing in known_hasla:
+        ratio = difflib.SequenceMatcher(None, norm, existing, autojunk=False).ratio()
+        if ratio >= DEDUP_THRESHOLD:
+            return True
+    return False
+
+
 def save(events: list[dict]) -> None:
     events_sorted = sorted(events, key=lambda e: e["datetime"], reverse=True)
     payload = json.dumps(events_sorted, ensure_ascii=False, indent=2)
@@ -283,6 +304,10 @@ def enrich_fragments(fragments: list[dict], force: bool = False,
     total = (len(to_process) + BATCH_SIZE - 1) // BATCH_SIZE
     global_nn = len(cached) + 1
 
+    # Zbuduj listę znormalizowanych haseł z cache do deduplicacji
+    known_hasla = [_haslo_norm(e["haslo"]) for e in cached.values() if e.get("haslo")]
+    dedup_skipped = 0
+
     for b_start in range(0, len(to_process), BATCH_SIZE):
         batch   = to_process[b_start: b_start + BATCH_SIZE]
         b_num   = b_start // BATCH_SIZE + 1
@@ -300,7 +325,14 @@ def enrich_fragments(fragments: list[dict], force: bool = False,
             print(f"\n  UWAGA: oczekiwano {len(batch)}, dostano {len(results)}")
 
         for frag, enriched in zip(batch, results):
-            new_events.append(merge(frag, enriched, global_nn))
+            haslo = enriched.get("haslo", frag["raw_fragment"][:90])
+            if _is_duplicate(haslo, known_hasla):
+                dedup_skipped += 1
+                print(f"\n  [DEDUP] Pominięto: {haslo[:70]}")
+                continue
+            ev = merge(frag, enriched, global_nn)
+            new_events.append(ev)
+            known_hasla.append(_haslo_norm(haslo))
             global_nn += 1
 
         print(f"OK")
@@ -309,7 +341,8 @@ def enrich_fragments(fragments: list[dict], force: bool = False,
     all_events = list(cached.values()) + new_events
     save(all_events)
 
-    print(f"\nGotowe: {len(new_events)} nowych + {len(cached)} z cache = {len(all_events)} lacznie")
+    dedup_info = f"  duplikaty pominięte: {dedup_skipped}" if dedup_skipped else ""
+    print(f"\nGotowe: {len(new_events)} nowych + {len(cached)} z cache = {len(all_events)} lacznie{dedup_info}")
     print(f"  data/events.json")
     print(f"  site/events.json")
     return all_events
