@@ -20,7 +20,7 @@ let leafletMap   = null;
 
 async function init() {
   try {
-    const resp = await fetch('events.json');
+    const resp = await fetch('events.json?v=' + Date.now());
     if (!resp.ok) throw new Error('Brak events.json');
     allEvents = await resp.json();
   } catch (e) {
@@ -141,7 +141,7 @@ function setupSearch() {
   });
 }
 
-const EDITORIAL_RE = /zobacz\s+skr[oó]t|zapraszam\s+(do|na)|skr[oó]ty?\s+(nocn|porann|wieczorn|numer\s*\d|nr\s*\d)|nocne\s+numer|poranne\s+numer|to\s+ju[zż]\s+wszystko/i;
+const EDITORIAL_RE = /zobacz\s+skr[oó]t|zapraszam\s+(do|na)|skr[oó]ty?\s+(nocn|porann|wieczorn|numer\s*\d|nr\s*\d)|nocne\s+numer|poranne\s+numer|to\s+ju[zż]\s+wszystko|kr[oó]tkie\s+info\s+nr|skr[oó]t\s+info\s+nr|(info|skr[oó]t)\s+nr\s*\d.*godzin/i;
 
 function isEditorial(e) {
   const txt = (e.raw_fragment || e.haslo || '');
@@ -555,7 +555,7 @@ async function renderAnaliza() {
 
   let analyses = [];
   try {
-    const resp = await fetch('analyses.json');
+    const resp = await fetch('analyses.json?v=' + Date.now());
     if (resp.ok) analyses = await resp.json();
   } catch (e) {}
 

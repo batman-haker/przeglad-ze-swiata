@@ -6,7 +6,7 @@
   <title>Przegląd ze świata</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -18,8 +18,51 @@
 
   <!-- Banner -->
   <header class="site-banner">
-    <img src="przegladzeswiata.png" alt="Przegląd ze świata" class="banner-img">
+    <img src="logoprzeeglad.png" alt="Logo" class="banner-logo">
+    <div class="banner-text">
+      <span class="banner-title">Przegląd</span>
+      <span class="banner-subtitle">Świata</span>
+    </div>
   </header>
+
+  <!-- Ticker notowań -->
+  <div class="ticker-wrap">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          {"description": "S&P 500",  "proName": "FOREXCOM:SPXUSD"},
+          {"description": "Nasdaq",   "proName": "FOREXCOM:NSXUSD"},
+          {"description": "DAX",      "proName": "XETR:DAX"},
+          {"description": "WIG20",    "proName": "GPW:WIG20"},
+          {"description": "Nvidia",   "proName": "NASDAQ:NVDA"},
+          {"description": "Apple",    "proName": "NASDAQ:AAPL"},
+          {"description": "Tesla",    "proName": "NASDAQ:TSLA"},
+          {"description": "Microsoft","proName": "NASDAQ:MSFT"},
+          {"description": "Amazon",   "proName": "NASDAQ:AMZN"},
+          {"description": "QQQ",      "proName": "NASDAQ:QQQ"},
+          {"description": "AMD",      "proName": "NASDAQ:AMD"},
+          {"description": "Intel",    "proName": "NASDAQ:INTC"},
+          {"description": "BTC",      "proName": "COINBASE:BTCUSD"},
+          {"description": "ETH",      "proName": "COINBASE:ETHUSD"},
+          {"description": "Złoto",    "proName": "FOREXCOM:XAUUSD"},
+          {"description": "Srebro",   "proName": "FOREXCOM:XAGUSD"},
+          {"description": "Miedź",    "proName": "COMEX:HG1!"},
+          {"description": "KGHM",     "proName": "GPW:KGH"},
+          {"description": "Ropa WTI", "proName": "NYMEX:CL1!"},
+          {"description": "USD/PLN",  "proName": "FX:USDPLN"},
+          {"description": "EUR/PLN",  "proName": "FX:EURPLN"}
+        ],
+        "showSymbolLogo": true,
+        "colorTheme": "dark",
+        "isTransparent": true,
+        "displayMode": "adaptive",
+        "locale": "pl"
+      }
+      </script>
+    </div>
+  </div>
 
   <!-- Pasek nawigacji + meta -->
   <nav class="viewnav">
@@ -134,10 +177,9 @@
   </div>
 
   <footer class="footer">
-    Źródło: <a href="https://x.com/GPW_Trader2022" target="_blank">@GPW_Trader2022</a>
-    · Tablica Świat
+    Przegląd Świata · dane aktualizowane automatycznie
   </footer>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=20260520"></script>
 </body>
 </html>

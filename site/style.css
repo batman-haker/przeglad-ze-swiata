@@ -42,18 +42,69 @@ body {
 a { color: var(--accent-hi); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* ---- Ticker notowań ---- */
+.ticker-wrap {
+  background: #0a0d14;
+  border-bottom: 1px solid var(--border);
+  height: 46px;
+  overflow: hidden;
+}
+.ticker-wrap .tradingview-widget-container,
+.ticker-wrap .tradingview-widget-container__widget {
+  height: 46px !important;
+}
+
 /* ---- Banner ---- */
 .site-banner {
-  width: 100%;
-  background: #000;
-  line-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .9rem;
+  padding: 1.6rem 1rem 1.4rem;
+  background: linear-gradient(135deg, #0a0d14 0%, #0f1420 60%, #0d1a2a 100%);
+  border-bottom: 1px solid rgba(59,130,246,.15);
+  text-align: center;
 }
-.banner-img {
-  width: 100%;
-  max-height: 340px;
-  object-fit: cover;
-  object-position: center;
-  display: block;
+.banner-logo {
+  height: 120px;
+  width: 120px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 18px rgba(0,200,220,.45));
+}
+.banner-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+.banner-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 2.6rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #00d4e8 0%, #60a5fa 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 10px rgba(0,210,232,.4));
+}
+.banner-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: .45em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-top: .3rem;
+}
+
+@media (max-width: 600px) {
+  .banner-logo { height: 88px; width: 88px; }
+  .banner-title { font-size: 1.8rem; letter-spacing: .1em; }
+  .banner-subtitle { font-size: .85rem; letter-spacing: .3em; }
+  .site-banner { padding: 1.2rem 1rem 1rem; gap: .7rem; }
 }
 
 .sep { margin: 0 .35rem; }
