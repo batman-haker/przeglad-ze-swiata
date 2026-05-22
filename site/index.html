@@ -8,21 +8,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Leaflet i Chart.js ładowane lazy w app.js -->
 </head>
 <body>
 
   <!-- Banner -->
   <header class="site-banner">
-    <img src="logoprzeeglad.png" alt="Logo" class="banner-logo">
-    <div class="banner-text">
-      <span class="banner-title">Przegląd</span>
-      <span class="banner-subtitle">Świata</span>
-    </div>
+    <img src="logoprzeeglad.jpg?v=20260522c" alt="Przegląd Świata" class="banner-logo">
   </header>
 
   <!-- Ticker notowań -->
@@ -67,11 +59,13 @@
   <!-- Pasek nawigacji + meta -->
   <nav class="viewnav">
     <div class="viewnav-inner">
-      <button class="view-btn active" data-view="timeline">📋 Tablica</button>
-      <button class="view-btn" data-view="dashboard">📊 Statystyki</button>
-      <button class="view-btn" data-view="map">🗺️ Mapa</button>
-      <button class="view-btn" data-view="analiza">📅 Analiza dnia</button>
-      <button class="view-btn" data-view="iran">🔥 Iran / Ormuz</button>
+      <button class="view-btn active" data-view="timeline">⚡ Tablica</button>
+      <button class="view-btn" data-view="analiza">🧠 Analiza dnia</button>
+      <button class="view-btn" data-view="market">📈 Analiza rynku</button>
+      <button class="view-btn" data-view="iran">☢️ Iran / Ormuz</button>
+      <button class="view-btn" data-view="makro">🗓 Makro</button>
+      <button class="view-btn" data-view="rynki">🌐 Rynki</button>
+      <button class="view-btn" data-view="heatmapa">🟥 Heatmapa</button>
       <span class="viewnav-meta">
         <span id="event-count">—</span> wydarzeń
         <span class="sep">·</span>
@@ -108,44 +102,6 @@
 
   </div>
 
-  <!-- ════════════════ WIDOK: DASHBOARD ════════════════ -->
-  <div id="view-dashboard" class="view">
-    <div class="dash-grid">
-
-      <div class="dash-card">
-        <div class="dash-title">Kategorie</div>
-        <canvas id="chart-kategorie"></canvas>
-      </div>
-
-      <div class="dash-card">
-        <div class="dash-title">Waga wydarzeń</div>
-        <canvas id="chart-waga"></canvas>
-      </div>
-
-      <div class="dash-card dash-wide">
-        <div class="dash-title">Aktywność per dzień</div>
-        <canvas id="chart-aktywnosc"></canvas>
-      </div>
-
-      <div class="dash-card">
-        <div class="dash-title">Top 10 podmiotów</div>
-        <canvas id="chart-podmioty"></canvas>
-      </div>
-
-      <div class="dash-card">
-        <div class="dash-title">Typy wydarzeń</div>
-        <canvas id="chart-typy"></canvas>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ════════════════ WIDOK: MAPA ════════════════ -->
-  <div id="view-map" class="view">
-    <div id="leaflet-map"></div>
-    <div class="map-legend" id="map-legend"></div>
-  </div>
-
   <!-- ════════════════ WIDOK: ANALIZA DNIA ════════════════ -->
   <div id="view-analiza" class="view">
     <div class="analiza-wrap" id="analiza-container"></div>
@@ -158,6 +114,40 @@
       <div class="iran-sub" id="iran-count">—</div>
     </div>
     <div class="iran-timeline" id="iran-timeline"></div>
+  </div>
+
+  <!-- ════════════════ WIDOK: HEATMAPA ════════════════ -->
+  <div id="view-heatmapa" class="view">
+    <div class="makro-wrap">
+      <div id="heatmapa-sp500"></div>
+      <div id="heatmapa-nasdaq" style="margin-top:1.5rem"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════ WIDOK: ANALIZA RYNKOWA ════════════════ -->
+  <div id="view-market" class="view">
+    <div class="mkt-wrap" id="mkt-container">
+      <div class="loading">Ładowanie analizy…</div>
+    </div>
+  </div>
+
+  <!-- ════════════════ WIDOK: RYNKI ════════════════ -->
+  <div id="view-rynki" class="view">
+    <div class="makro-wrap">
+      <div class="ticker-search-wrap">
+        <input type="text" id="ticker-input" class="ticker-input" placeholder="Wpisz ticker np. AAPL, TSLA, BTC-USD, GPW:KGH…" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button class="ticker-search-btn" id="ticker-search-btn">Szukaj</button>
+      </div>
+      <div id="ticker-chart-wrap"></div>
+      <div id="rynki-overview"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════ WIDOK: MAKRO ════════════════ -->
+  <div id="view-makro" class="view">
+    <div class="makro-wrap">
+      <div id="makro-calendar"></div>
+    </div>
   </div>
 
   <!-- Modal: Podmiot -->
