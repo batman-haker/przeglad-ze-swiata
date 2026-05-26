@@ -40,7 +40,15 @@ EDITORIAL_RE = re.compile(
     r'|poranne\s+numer'
     r'|wi[eę]cej\s+w\s+kolejn'
     r'|dzie[nń]\s+dobry.*skr[oó]t'
-    r'|to\s+ju[zż]\s+wszystko)',
+    r'|to\s+ju[zż]\s+wszystko'
+    r'|dla\s+subskrybent'
+    r'|na\s+kanale\s+subskrypcji'
+    r'|skr[oó]t(y)?\s+dla\s+subskrybent'
+    r'|pozosta[łl]e\s+skr[oó]t'
+    r'|nocne\s+newsy\s+na\s+dole'
+    r'|reszta.*skr[oó]t.*subskrybent'
+    r'|je[żz]eli\s+chcesz.*skr[oó]t'
+    r'|poprzednie\s+skr[oó]ty\s+dla\s+subskrybent)',
     re.IGNORECASE,
 )
 
