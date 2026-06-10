@@ -133,10 +133,17 @@ def load_recent_events(hours: int = 72) -> list[dict]:
 # Prompt
 # ---------------------------------------------------------------------------
 
+def _pl_month_year(dt: datetime) -> str:
+    """Zwraca aktualny miesiąc i rok po polsku, np. 'czerwiec 2026'."""
+    miesiace = ["styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
+                "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"]
+    return f"{miesiace[dt.month - 1]} {dt.year}"
+
+
 SYSTEM_PROMPT = """\
 Jesteś analitykiem rynkowym dla grupy profesjonalnych traderów.
 
-AKTUALNY KONTEKST (maj 2026):
+AKTUALNY KONTEKST (__CONTEXT_DATE__):
 - Donald Trump jest OBECNYM prezydentem USA (od stycznia 2025)
 - Wojna w Ukrainie trwa, napięcia USA-Iran wokół Cieśniny Ormuz
 - Fed w cyklu utrzymywania stóp, inflacja w USA stopniowo spada
@@ -151,7 +158,7 @@ Zasady:
 - Jeśli ruch jest szumem — powiedz to wprost.
 - Maksymalnie 600 słów w całej odpowiedzi.
 - Odpowiedz TYLKO czystym JSON bez markdown, bez ```.
-"""
+""".replace("__CONTEXT_DATE__", _pl_month_year(datetime.now(timezone.utc)))
 
 def build_prompt(market: dict, events: list[dict]) -> str:
     # Grupuj dane rynkowe

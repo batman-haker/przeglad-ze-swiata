@@ -42,12 +42,19 @@ BATCH_SIZE = 10
 # Prompt
 # ---------------------------------------------------------------------------
 
+def _pl_month_year(dt: datetime) -> str:
+    """Zwraca aktualny miesiąc i rok po polsku, np. 'czerwiec 2026'."""
+    miesiace = ["styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
+                "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"]
+    return f"{miesiace[dt.month - 1]} {dt.year}"
+
+
 SYSTEM_PROMPT = """\
 Jesteś redaktorem globalnej tablicy informacyjnej "Tablica Świat".
 Otrzymasz listę surowych fragmentów newsów ze skrótów informacyjnych z profilu X @GPW_Trader2022.
 Każdy fragment to jeden news — często skrócony, bez polskich znaków lub z literówkami.
 
-AKTUALNY KONTEKST POLITYCZNY (maj 2026):
+AKTUALNY KONTEKST POLITYCZNY (__CONTEXT_DATE__):
 - Donald Trump jest OBECNYM prezydentem USA (wygrał wybory w listopadzie 2024, zaprzysiężony styczeń 2025)
 - Joe Biden jest byłym prezydentem USA
 - Kamala Harris jest byłą wiceprezydent USA
@@ -95,8 +102,12 @@ podmioty (array, max 6 pozycji)
   Kraje, firmy, osoby, organizacje. Format: "USA", "Iran", "Trump", "OPEC", "JSW".
 
 region (string lub null)
+  Wybierz NAJBARDZIEJ konkretny region, którego news bezpośrednio dotyczy:
   "Bliski Wschód", "Europa", "USA", "Azja", "Polska", "Afryka",
-  "Ameryka Łacińska", "Globalnie". null jeśli niejednoznaczny.
+  "Ameryka Łacińska", "Globalnie".
+  - News dotyczący wyłącznie Polski → "Polska" (NIE "Globalnie").
+  - "Globalnie" tylko gdy news naprawdę obejmuje cały świat — nie jako wartość domyślna.
+  - null tylko gdy regionu w ogóle nie da się ustalić.
 
 watek (string lub null)
   "iran-2025"   — konflikt/napięcie wokół Iranu i Ormuz
@@ -113,7 +124,7 @@ ZASADY:
 Format każdego obiektu:
 {"fragment_nn":<int>,"haslo":<str>,"rozwiniecie":<str>,"kategoria":<str>,\
 "waga":<str>,"typ":<str>,"podmioty":[<str>],"region":<str|null>,"watek":<str|null>}
-"""
+""".replace("__CONTEXT_DATE__", _pl_month_year(datetime.now(timezone.utc)))
 
 
 # ---------------------------------------------------------------------------

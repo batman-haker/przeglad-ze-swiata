@@ -5,3 +5,4 @@ __pycache__/
 venv/
 data/fetched_raw.json
 data/fetched_posts.txt
+logs/

@@ -48,7 +48,13 @@ EDITORIAL_RE = re.compile(
     r'|nocne\s+newsy\s+na\s+dole'
     r'|reszta.*skr[oó]t.*subskrybent'
     r'|je[żz]eli\s+chcesz.*skr[oó]t'
-    r'|poprzednie\s+skr[oó]ty\s+dla\s+subskrybent)',
+    r'|poprzednie\s+skr[oó]ty\s+dla\s+subskrybent'
+    r'|udost[eę]pnij'
+    r'|skomentuj'
+    r'|obserwuj\s+(kanal|profil|konto)'
+    r'|kliknij\s+[❤🔖🔄⭐]'
+    r'|napisz\s+czy\s+wakacje'
+    r'|podziel\s+si[eę])',
     re.IGNORECASE,
 )
 
@@ -130,7 +136,9 @@ def is_skrot_info(content: str) -> bool:
     first = content.strip().split('\n')[0]
     if first.strip().startswith('RT @'):
         return False
-    return bool(re.search(r'skr[oó]t\s+info|skr[oó]t\s+informacji', first, re.IGNORECASE))
+    # \S*nfo handles "info" and "ℹ️nfo" (emoji embedded mid-word)
+    return bool(re.search(r'skr[oó]t\s+\S*nfo|skr[oó]t\s+informacji', first, re.IGNORECASE))
+
 
 
 def detect_format(lines: list[str]) -> str:

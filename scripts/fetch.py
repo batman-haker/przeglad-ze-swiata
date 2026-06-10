@@ -2,25 +2,19 @@
 fetch.py — pobiera tweety @GPW_Trader2022 przez twitterapi.io
 
 Uruchomienie:
-    python scripts/fetch.py            # nowe posty (od ostatnio zapisanego)
+    python scripts/fetch.py            # nowe posty (ostatnie 4 dni)
     python scripts/fetch.py --all      # cała historia (wiele stron)
     python scripts/fetch.py --pages 5  # maksymalnie N stron (5 * 20 = 100 tweetów)
 
 Wynik:
     data/fetched_raw.json    — surowe odpowiedzi z API (archiwum)
-    data/fetched_posts.txt   — gotowe posty w formacie posts_raw.txt (do ręcznej weryfikacji)
-
-Workflow:
-    1. Uruchom skrypt
-    2. Sprawdź data/fetched_posts.txt
-    3. Skopiuj wybrane posty do data/posts_raw.txt
-    4. Posty subskrybentów dopisz ręcznie do osobnego pliku (np. data/posts_sub.txt)
+    data/fetched_posts.txt   — wszystkie posty z ostatnich 4 dni (wejście do build.py)
 """
 
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import urllib3
@@ -40,6 +34,8 @@ BASE_URL = "https://api.twitterapi.io/twitter/user/last_tweets"
 RAW_OUT = ROOT / "data" / "fetched_raw.json"
 POSTS_OUT = ROOT / "data" / "fetched_posts.txt"
 
+LOOKBACK_DAYS = 4  # fetched_posts.txt zawiera tweety z ostatnich N dni
+
 
 def fetch_page(cursor: str = "") -> dict:
     headers = {"X-API-Key": API_KEY}
@@ -51,35 +47,29 @@ def fetch_page(cursor: str = "") -> dict:
     resp = requests.get(BASE_URL, headers=headers, params=params, timeout=15, verify=False)
     resp.raise_for_status()
     raw = resp.json()
-    # normalizuj: tweety mogą być w data.tweets lub bezpośrednio w tweets
     if "data" in raw and isinstance(raw["data"], dict):
         tweets = raw["data"].get("tweets", [])
         raw["tweets"] = tweets
     return raw
 
 
-def parse_datetime(created_at: str) -> tuple[str, str]:
-    """Zwraca (DATA: RRRR-MM-DD, GODZINA: GG:MM) z pola createdAt tweeta."""
-    # twitterapi.io zwraca np. "Mon May 12 14:30:00 +0000 2025"
+def parse_datetime(created_at: str) -> datetime:
     try:
-        dt = datetime.strptime(created_at, "%a %b %d %H:%M:%S %z %Y")
+        return datetime.strptime(created_at, "%a %b %d %H:%M:%S %z %Y").astimezone(timezone.utc)
     except ValueError:
-        # fallback: ISO 8601
-        dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-    # konwertuj na UTC (już powinno być)
-    dt = dt.astimezone(timezone.utc)
-    return dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M")
+        return datetime.fromisoformat(created_at.replace("Z", "+00:00")).astimezone(timezone.utc)
 
 
 def tweet_to_post_block(tweet: dict, index: int) -> str:
-    """Formatuje tweet do bloku kompatybilnego z posts_raw.txt."""
     tid = tweet.get("id", "")
     url = tweet.get("url") or f"https://x.com/GPW_Trader2022/status/{tid}"
     created_at = tweet.get("createdAt", "")
     text = tweet.get("text", "").strip()
 
     if created_at:
-        data, godzina = parse_datetime(created_at)
+        dt = parse_datetime(created_at)
+        data = dt.strftime("%Y-%m-%d")
+        godzina = dt.strftime("%H:%M")
     else:
         data, godzina = "????-??-??", "??:??"
 
@@ -94,7 +84,6 @@ def tweet_to_post_block(tweet: dict, index: int) -> str:
 
 
 def load_known_ids() -> set:
-    """Zbiera ID już zapisane w fetched_raw.json (żeby nie duplikować)."""
     if not RAW_OUT.exists():
         return set()
     with RAW_OUT.open(encoding="utf-8") as f:
@@ -108,7 +97,7 @@ def main():
         sys.exit(1)
 
     fetch_all = "--all" in sys.argv
-    max_pages = 99999 if fetch_all else 3  # domyślnie 3 strony = ~60 tweetów
+    max_pages = 99999 if fetch_all else 3
     for arg in sys.argv[1:]:
         if arg.startswith("--pages"):
             try:
@@ -121,7 +110,7 @@ def main():
     cursor = ""
     page = 0
     new_count = 0
-    stop_early = False
+    cutoff = datetime.now(timezone.utc) - timedelta(days=LOOKBACK_DAYS)
 
     print(f"Pobieranie tweetów @GPW_Trader2022 (maks. {max_pages} stron)...")
 
@@ -137,57 +126,79 @@ def main():
         tweets = data.get("tweets", [])
         print(f"{len(tweets)} tweetów")
 
+        too_old = False
         for t in tweets:
             tid = t.get("id", "")
+
+            # Zatrzymaj gdy tweety są starsze niż cutoff
+            try:
+                dt = parse_datetime(t.get("createdAt", ""))
+                if dt < cutoff:
+                    too_old = True
+                    break
+            except Exception:
+                pass
+
             if tid in known_ids:
-                print(f"  → tweet {tid} już pobrany, zatrzymuję.")
-                stop_early = True
-                break
+                # Nie przerywaj — skrót info mógł być między już pobranymi tweetami
+                continue
+
             all_tweets.append(t)
             new_count += 1
 
-        if stop_early or not data.get("has_next_page"):
+        if too_old or not data.get("has_next_page"):
             break
 
         cursor = data.get("next_cursor", "")
         if not cursor:
             break
 
-        time.sleep(0.3)  # grzecznościowy throttle
+        time.sleep(0.3)
 
-    if not all_tweets:
-        print("Brak nowych tweetów.")
-        return
-
-    # dołącz do fetched_raw.json
+    # Dołącz nowe tweety do archiwum
     existing: list[dict] = []
     if RAW_OUT.exists():
         with RAW_OUT.open(encoding="utf-8") as f:
             existing = json.load(f)
 
-    merged = all_tweets + existing  # nowe na początku
+    merged = all_tweets + existing
     RAW_OUT.parent.mkdir(exist_ok=True)
     with RAW_OUT.open("w", encoding="utf-8") as f:
         json.dump(merged, f, ensure_ascii=False, indent=2)
 
-    # zapisz fetched_posts.txt
+    # fetched_posts.txt: WSZYSTKIE tweety z ostatnich LOOKBACK_DAYS (z archiwum)
+    # Dzięki temu build.py widzi wszystkie posty z ostatnich dni, nie tylko nowe
+    recent: list[dict] = []
+    for t in merged:
+        try:
+            dt = parse_datetime(t.get("createdAt", ""))
+            if dt >= cutoff:
+                recent.append(t)
+        except Exception:
+            pass
+
+    recent.sort(key=lambda t: t.get("id", ""), reverse=True)
+
     lines = [
         "# Pobrane automatycznie przez fetch.py\n"
         f"# {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}\n"
-        "# Zweryfikuj i skopiuj wybrane posty do data/posts_raw.txt\n"
+        f"# Tweety z ostatnich {LOOKBACK_DAYS} dni ({len(recent)} postów)\n"
         "#\n"
     ]
-    for i, tweet in enumerate(all_tweets, 1):
+    for i, tweet in enumerate(recent, 1):
         lines.append(tweet_to_post_block(tweet, i))
-        lines.append("")  # pusta linia między postami
+        lines.append("")
 
     with POSTS_OUT.open("w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
-    print(f"\nGotowe:")
-    print(f"  Nowe tweety:        {new_count}")
+    if new_count:
+        print(f"\nGotowe:")
+        print(f"  Nowe tweety:        {new_count}")
+    else:
+        print("  Brak nowych tweetów.")
     print(f"  data/fetched_raw.json   — {len(merged)} tweetów łącznie")
-    print(f"  data/fetched_posts.txt  — gotowe do wklejenia do posts_raw.txt")
+    print(f"  data/fetched_posts.txt  — {len(recent)} tweetów z ostatnich {LOOKBACK_DAYS} dni")
 
 
 if __name__ == "__main__":
