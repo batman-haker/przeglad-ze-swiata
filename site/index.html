@@ -14,9 +14,13 @@
 </head>
 <body>
 
-  <!-- Banner -->
+  <!-- Banner: film intro (logo jako plakat na czas ladowania) -->
   <header class="site-banner">
-    <img src="logoprzeeglad.jpg?v=20260522c" alt="Przegląd Świata" class="banner-logo">
+    <video class="banner-logo" autoplay muted loop playsinline
+           poster="logoprzeeglad.jpg?v=20260522c" aria-label="Przegląd Świata — intro">
+      <source src="intro.mp4?v=20260612" type="video/mp4">
+      <img src="logoprzeeglad.jpg?v=20260522c" alt="Przegląd Świata" class="banner-logo">
+    </video>
   </header>
 
   <!-- Ticker notowań -->
@@ -75,6 +79,16 @@
       </span>
     </div>
   </nav>
+
+  <!-- Baner: gra Historyczny Inwestor -->
+  <a href="https://batman-haker.github.io/historycznyinwestor/" target="_blank" rel="noopener" class="game-banner">
+    <span class="game-banner-icon">🎮</span>
+    <span class="game-banner-text">
+      <strong>Historyczny Inwestor</strong>
+      <span class="game-banner-sub">Przeżyj 9 największych kryzysów finansowych — sprawdź, czy pomnożysz kapitał</span>
+    </span>
+    <span class="game-banner-cta">Zagraj teraz ▶</span>
+  </a>
 
   <!-- ════════════════ WIDOK: TABLICA ════════════════ -->
   <div id="view-timeline" class="view active">
