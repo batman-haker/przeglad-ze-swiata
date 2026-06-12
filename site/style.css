@@ -95,6 +95,14 @@ body::before {
   }
 }
 
+/* Film w naglowku: cala klatka, bez przycinania (wyzszy niz logo) */
+.site-banner video.banner-logo {
+  max-height: 70vh;
+  height: auto;
+  object-fit: contain;
+  background: #090c12;
+}
+
 /* ── Baner gry: Historyczny Inwestor ───────────────────────── */
 .game-banner {
   display: flex;
