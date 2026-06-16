@@ -863,6 +863,50 @@ body::before {
   font-style: italic;
 }
 
+/* ---- Skuteczność sygnałów (track record) ---- */
+.mkt-score {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+.score-empty { font-size: .85rem; color: var(--text-dim); line-height: 1.5; }
+.score-top {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: .8rem;
+}
+.score-big { display: flex; flex-direction: column; line-height: 1.1; }
+.score-num {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent-hi);
+  font-family: 'Orbitron', monospace;
+}
+.score-lbl { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); margin-top: .15rem; }
+.score-sub { font-size: .72rem; color: var(--text-dim); margin-top: .1rem; }
+.score-byexp { font-size: .8rem; color: var(--text); line-height: 1.7; }
+.score-tab { width: 100%; border-collapse: collapse; font-size: .8rem; margin-top: .3rem; }
+.score-tab th {
+  text-align: left;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-dim);
+  padding: .3rem .5rem;
+  border-bottom: 1px solid var(--border);
+}
+.score-tab td { padding: .35rem .5rem; border-bottom: 1px solid rgba(255,255,255,.04); }
+.score-tk { font-family: 'Orbitron', monospace; font-weight: 700; color: var(--accent-hi); }
+.score-tab td.pos { color: #10b981; }
+.score-tab td.neg { color: #ef4444; }
+.res-ok  { color: #10b981; font-weight: 600; }
+.res-no  { color: #ef4444; font-weight: 600; }
+.res-neu { color: var(--text-dim); }
+
 @media (max-width: 600px) {
   .mkt-instruments { grid-template-columns: 1fr 1fr; }
 }

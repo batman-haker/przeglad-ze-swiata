@@ -26,6 +26,14 @@ EVENTS_FILE  = ROOT / "data" / "events.json"
 OUT_DATA     = ROOT / "data" / "market_analysis.json"
 OUT_SITE     = ROOT / "site" / "market_analysis.json"
 
+# Etap 2: sledzenie skutecznosci sygnalow
+SIGNALS_LOG       = ROOT / "data" / "signals_log.json"
+SIGNALS_LOG_SITE  = ROOT / "site" / "signals_log.json"
+SCOREBOARD        = ROOT / "data" / "signals_scoreboard.json"
+SCOREBOARD_SITE   = ROOT / "site" / "signals_scoreboard.json"
+HORIZON_DAYS = 3     # dni roboczych do rozliczenia sygnalu
+BAND_PCT     = 1.5   # +/- pasmo: ruch ponizej = "bez ruchu"
+
 GEMINI_KEY   = os.getenv("GEMINI_API_KEY", "")
 GEMINI_URL   = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -401,6 +409,125 @@ def call_gemini(prompt: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Etap 2: sledzenie skutecznosci sygnalow
+# ---------------------------------------------------------------------------
+
+def _load_json(path, default):
+    if path.exists():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return default
+    return default
+
+
+def _resolve_signal(e: dict) -> None:
+    """Rozlicza otwarty sygnal jesli minelo >= HORIZON_DAYS dni roboczych."""
+    try:
+        hist = yf.Ticker(e["ticker"]).history(period="1mo", interval="1d", auto_adjust=True)
+        if hist.empty:
+            return
+        closes = hist["Close"].dropna()
+        after = [
+            (idx.date().isoformat(), float(v))
+            for idx, v in closes.items()
+            if idx.date().isoformat() > e["date"]
+        ]
+        if len(after) < HORIZON_DAYS:
+            return  # za malo sesji, czekamy
+        eval_date, eval_price = after[HORIZON_DAYS - 1]
+        base = e["price_at_signal"]
+        ret = round((eval_price - base) / base * 100, 2) if base else 0.0
+
+        exp = e["ekspozycja"]
+        if exp == "pozytywna":
+            outcome = "trafiony" if ret >= BAND_PCT else ("nietrafiony" if ret <= -BAND_PCT else "neutralny")
+        elif exp == "negatywna":
+            outcome = "trafiony" if ret <= -BAND_PCT else ("nietrafiony" if ret >= BAND_PCT else "neutralny")
+        else:  # neutralna — trafiony jesli faktycznie bez ruchu
+            outcome = "trafiony" if abs(ret) <= BAND_PCT else "nietrafiony"
+
+        e.update(status="resolved", price_eval=round(eval_price, 2),
+                 return_pct=ret, eval_date=eval_date, outcome=outcome)
+    except Exception as ex:
+        print(f"  WARN rozliczenie {e['ticker']}: {ex}")
+
+
+def _build_scoreboard(log: list[dict], now: datetime) -> dict:
+    judged = [e for e in log if e["status"] == "resolved" and e["outcome"] in ("trafiony", "nietrafiony")]
+
+    def rate(items):
+        n = len(items)
+        h = sum(1 for e in items if e["outcome"] == "trafiony")
+        return {"n": n, "trafione": h, "hit_rate": round(h / n * 100, 1) if n else None}
+
+    by_exp = {exp: rate([e for e in judged if e["ekspozycja"] == exp])
+              for exp in ("pozytywna", "negatywna", "neutralna")}
+
+    return {
+        "updated_at": now.isoformat(),
+        "horizon_days": HORIZON_DAYS,
+        "band_pct": BAND_PCT,
+        "overall": rate(judged),
+        "by_exposure": by_exp,
+        "open_count": sum(1 for e in log if e["status"] == "open"),
+        "resolved_count": sum(1 for e in log if e["status"] == "resolved"),
+        "recent": sorted([e for e in log if e["status"] == "resolved"],
+                         key=lambda e: e.get("eval_date") or "", reverse=True)[:15],
+    }
+
+
+def track_signals(spolki: list[dict], spotlight: list[dict], now: datetime) -> dict:
+    """Zapisuje nowe sygnaly, rozlicza dojrzale, buduje tablice skutecznosci."""
+    price_by_ticker = {s["ticker"]: s for s in spotlight}
+    log = _load_json(SIGNALS_LOG, [])
+    existing = {(e["date"], e["ticker"]) for e in log}
+    today = now.date().isoformat()
+
+    # 1. zapisz dzisiejsze sygnaly (1 na ticker/dzien)
+    nowe = 0
+    for sp in spolki:
+        tk = sp.get("ticker")
+        px = price_by_ticker.get(tk)
+        if not tk or not px or (today, tk) in existing:
+            continue
+        log.append({
+            "id": f"{today}-{tk}",
+            "date": today,
+            "ticker": tk,
+            "spolka": sp.get("spolka") or px.get("name", tk),
+            "ekspozycja": (sp.get("ekspozycja") or "neutralna").lower(),
+            "price_at_signal": px["price"],
+            "uzasadnienie": sp.get("uzasadnienie", ""),
+            "status": "open",
+            "price_eval": None, "return_pct": None, "outcome": None, "eval_date": None,
+        })
+        existing.add((today, tk))
+        nowe += 1
+
+    # 2. rozlicz otwarte sygnaly ktore dojrzaly
+    for e in log:
+        if e["status"] == "open":
+            _resolve_signal(e)
+
+    # 3. tablica skutecznosci
+    scoreboard = _build_scoreboard(log, now)
+
+    payload_log = json.dumps(log, ensure_ascii=False, indent=2)
+    SIGNALS_LOG.write_text(payload_log, encoding="utf-8")
+    SIGNALS_LOG_SITE.write_text(payload_log, encoding="utf-8")
+    payload_sb = json.dumps(scoreboard, ensure_ascii=False, indent=2)
+    SCOREBOARD.write_text(payload_sb, encoding="utf-8")
+    SCOREBOARD_SITE.write_text(payload_sb, encoding="utf-8")
+
+    ov = scoreboard["overall"]
+    print(f"  Sygnaly: +{nowe} nowych, otwarte={scoreboard['open_count']}, "
+          f"rozliczone={scoreboard['resolved_count']}, "
+          f"trafnosc={ov['hit_rate']}% ({ov['trafione']}/{ov['n']})")
+    return scoreboard
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -428,6 +555,9 @@ def main():
     print("  Krok 4: analiza Gemini...")
     prompt   = build_prompt(market, events, spotlight)
     analysis = call_gemini(prompt)
+
+    print("  Krok 5: sledzenie skutecznosci sygnalow...")
+    track_signals(analysis.get("spolki", []), spotlight, now)
 
     out = {
         "generated_at": now.isoformat(),

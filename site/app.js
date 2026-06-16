@@ -320,6 +320,57 @@ async function renderMarketAnalysis() {
     </div>`;
   }
 
+  // — Skuteczność sygnałów (track record) —
+  let scoreboard = null;
+  try {
+    const r = await fetch('signals_scoreboard.json?v=' + Date.now());
+    if (r.ok) scoreboard = await r.json();
+  } catch (e) { /* brak danych jeszcze */ }
+
+  if (scoreboard) {
+    const ov  = scoreboard.overall || {};
+    const pct = v => (v === null || v === undefined) ? '—' : v + '%';
+    html += `<div class="mkt-score">
+      <div class="mkt-section-title">🏆 Skuteczność sygnałów <small>horyzont ${scoreboard.horizon_days} sesje · pasmo ±${scoreboard.band_pct}%</small></div>`;
+    if (!ov.n) {
+      html += `<p class="score-empty">Zbieranie danych — trafność pojawi się po rozliczeniu pierwszych sygnałów (≈${scoreboard.horizon_days} sesje od pierwszego sygnału). Sygnały w toku: <b>${scoreboard.open_count}</b>.</p>`;
+    } else {
+      const ex = scoreboard.by_exposure || {};
+      const exLine = ['pozytywna', 'negatywna', 'neutralna'].map(k => {
+        const e = ex[k] || {};
+        return `${k} <b>${pct(e.hit_rate)}</b> (${e.trafione || 0}/${e.n || 0})`;
+      }).join(' · ');
+      html += `<div class="score-top">
+        <div class="score-big">
+          <span class="score-num">${pct(ov.hit_rate)}</span>
+          <span class="score-lbl">trafność ogółem</span>
+          <span class="score-sub">${ov.trafione}/${ov.n} rozliczonych · w toku ${scoreboard.open_count}</span>
+        </div>
+        <div class="score-byexp">${exLine}</div>
+      </div>`;
+      const recent = (scoreboard.recent || []).filter(e => e.outcome);
+      if (recent.length) {
+        html += `<table class="score-tab"><thead><tr><th>Rozlicz.</th><th>Ticker</th><th>Ekspozycja</th><th>Zwrot</th><th>Wynik</th></tr></thead><tbody>`;
+        for (const e of recent) {
+          const neu  = e.outcome === 'neutralny';
+          const ok   = e.outcome === 'trafiony';
+          const icon = ok ? '✓' : (neu ? '•' : '✗');
+          const cls  = ok ? 'res-ok' : (neu ? 'res-neu' : 'res-no');
+          const ret  = (e.return_pct >= 0 ? '+' : '') + e.return_pct + '%';
+          html += `<tr>
+            <td>${esc(e.eval_date || e.date)}</td>
+            <td class="score-tk">${esc(e.ticker)}</td>
+            <td>${esc(e.ekspozycja)}</td>
+            <td class="${e.return_pct >= 0 ? 'pos' : 'neg'}">${ret}</td>
+            <td class="${cls}">${icon} ${esc(e.outcome)}</td>
+          </tr>`;
+        }
+        html += `</tbody></table>`;
+      }
+    }
+    html += `</div>`;
+  }
+
   // — Sekcje analizy —
   const sections = [
     { key: 'trendy',     icon: '📊', label: 'Trendy rynkowe' },
