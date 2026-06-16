@@ -290,6 +290,36 @@ async function renderMarketAnalysis() {
   }
   html += `</div>`;
 
+  // — Spółki na celowniku (news → ticker) —
+  const spolki = analysis.spolki || [];
+  if (spolki.length) {
+    const priceByTicker = {};
+    (data.spotlight || []).forEach(s => { priceByTicker[s.ticker] = s; });
+    const expClass = { pozytywna: 'pos', negatywna: 'neg', neutralna: 'neu' };
+    html += `<div class="mkt-spolki">
+      <div class="mkt-section-title">🏢 Spółki na celowniku <small>wykryte w newsach</small></div>
+      <div class="mkt-spolki-grid">`;
+    for (const sp of spolki) {
+      const px  = priceByTicker[sp.ticker];
+      const exp = (sp.ekspozycja || 'neutralna').toLowerCase();
+      const ec  = expClass[exp] || 'neu';
+      const chg = px ? `<span class="chg ${px.change_5d >= 0 ? 'pos' : 'neg'}">${px.change_5d >= 0 ? '+' : ''}${px.change_5d}%<small>5D</small></span>` : '';
+      const price = px ? px.price.toLocaleString('pl-PL') : '';
+      html += `<div class="spolka-card">
+        <div class="spolka-head">
+          <span class="spolka-ticker">${esc(sp.ticker || '')}</span>
+          <span class="spolka-name">${esc(sp.spolka || '')}</span>
+          <span class="spolka-exp exp-${ec}">${esc(exp)}</span>
+        </div>
+        <div class="spolka-px">${price} ${chg}</div>
+        <div class="spolka-why">${esc(sp.uzasadnienie || '')}</div>
+      </div>`;
+    }
+    html += `</div>
+      <div class="mkt-disclaimer">⚠️ Analiza edukacyjna, nie stanowi rekomendacji inwestycyjnej.</div>
+    </div>`;
+  }
+
   // — Sekcje analizy —
   const sections = [
     { key: 'trendy',     icon: '📊', label: 'Trendy rynkowe' },

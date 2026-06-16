@@ -795,6 +795,74 @@ body::before {
 .mkt-uwaga .mkt-section-title { color: #f59e0b; }
 .mkt-uwaga p { font-size: .88rem; color: var(--text); line-height: 1.5; }
 
+/* ---- Spółki na celowniku (news → ticker) ---- */
+.mkt-spolki {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+.mkt-section-title small {
+  font-size: .68rem;
+  font-weight: 500;
+  letter-spacing: .03em;
+  text-transform: none;
+  color: var(--text-dim);
+  margin-left: .4rem;
+}
+.mkt-spolki-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: .7rem;
+}
+.spolka-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: .7rem .8rem;
+}
+.spolka-head {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  flex-wrap: wrap;
+}
+.spolka-ticker {
+  font-weight: 700;
+  font-size: .82rem;
+  color: var(--accent-hi);
+  font-family: 'Orbitron', monospace;
+}
+.spolka-name { font-size: .78rem; color: var(--text-dim); flex: 1; }
+.spolka-exp {
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: .1rem .4rem;
+  border-radius: 4px;
+  letter-spacing: .03em;
+}
+.exp-pos { background: rgba(16,185,129,.18); color: #6ee7b7; }
+.exp-neg { background: rgba(239,68,68,.18);  color: #fca5a5; }
+.exp-neu { background: rgba(148,163,184,.18); color: #cbd5e1; }
+.spolka-px {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: .35rem 0;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.spolka-why { font-size: .8rem; color: var(--text); line-height: 1.45; }
+.mkt-disclaimer {
+  font-size: .72rem;
+  color: var(--text-dim);
+  margin-top: .8rem;
+  font-style: italic;
+}
+
 @media (max-width: 600px) {
   .mkt-instruments { grid-template-columns: 1fr 1fr; }
 }

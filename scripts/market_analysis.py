@@ -10,6 +10,7 @@ Wynik: data/market_analysis.json + site/market_analysis.json
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -60,6 +61,34 @@ INSTRUMENTS = {
 }
 
 # ---------------------------------------------------------------------------
+# Watchlista spolek — wykrywanie wzmianek w newsach (Etap 1)
+#   klucz = symbol Yahoo Finance
+#   ("Nazwa", [aliasy do dopasowania w podmiotach/hasle, lowercase])
+#   Mapujemy tylko spolki PUBLICZNE (z realnym tickerem). OpenAI/Anthropic/
+#   SpaceX/Shein pomijamy — prywatne, brak wyceny.
+# ---------------------------------------------------------------------------
+
+WATCHLIST = {
+    "NVDA":    ("Nvidia",        ["nvidia"]),
+    "TSLA":    ("Tesla",         ["tesla", "elon musk", "musk"]),
+    "MSFT":    ("Microsoft",     ["microsoft"]),
+    "META":    ("Meta",          ["meta", "facebook", "instagram", "whatsapp"]),
+    "AAPL":    ("Apple",         ["apple", "iphone"]),
+    "AMZN":    ("Amazon",        ["amazon", "aws"]),
+    "GOOGL":   ("Alphabet",      ["google", "alphabet", "deepmind"]),
+    "AVGO":    ("Broadcom",      ["broadcom"]),
+    "AMD":     ("AMD",           ["amd"]),
+    "PLTR":    ("Palantir",      ["palantir"]),
+    "INTC":    ("Intel",         ["intel"]),
+    "MU":      ("Micron",        ["micron"]),
+    "COIN":    ("Coinbase",      ["coinbase"]),
+    "MSTR":    ("MicroStrategy", ["microstrategy"]),
+    "JSW.WA":  ("JSW",           ["jsw"]),
+    "ZAB.WA":  ("Żabka",         ["żabka", "zabka"]),
+}
+
+
+# ---------------------------------------------------------------------------
 # Pobieranie danych
 # ---------------------------------------------------------------------------
 
@@ -107,6 +136,64 @@ def fetch_market_data() -> dict:
 
     print(f"  Pobrano dane dla {len(result)} instrumentów")
     return result
+
+
+def _changes_from_series(series) -> dict | None:
+    """Z serii cen zamkniecia liczy cene + zmiany 1D/3D/5D."""
+    series = series.dropna()
+    if len(series) < 2:
+        return None
+    now = float(series.iloc[-1])
+    d1  = float(series.iloc[-2])
+    d3  = float(series.iloc[-4]) if len(series) >= 4 else float(series.iloc[0])
+    d5  = float(series.iloc[0])
+    pct = lambda a, b: round((a - b) / b * 100, 2) if b else 0
+    return {
+        "price":     round(now, 2),
+        "change_1d": pct(now, d1),
+        "change_3d": pct(now, d3),
+        "change_5d": pct(now, d5),
+    }
+
+
+def fetch_spotlight(events: list[dict]) -> list[dict]:
+    """Wykrywa spolki z WATCHLIST wzmiankowane w newsach z 72h, pobiera ich
+    wyceny i zwraca liste: {ticker, name, ...zmiany, news:[hasla]}."""
+    hits: dict[str, list[str]] = {}
+    for e in events:
+        text = " ".join(e.get("podmioty") or []) + " " + (e.get("haslo") or "")
+        for ticker, (name, aliases) in WATCHLIST.items():
+            if ticker in hits:
+                # juz wykryta — dopisz news jesli pasuje
+                pass
+            for a in aliases:
+                if re.search(r"\b" + re.escape(a) + r"\b", text, re.I):
+                    hits.setdefault(ticker, [])
+                    haslo = e.get("haslo") or ""
+                    if haslo and haslo not in hits[ticker]:
+                        hits[ticker].append(haslo)
+                    break
+
+    if not hits:
+        print("  Spotlight: brak wzmianek spolek z watchlisty")
+        return []
+
+    print(f"  Spotlight: wykryto {len(hits)} spolek — pobieram wyceny...")
+    spotlight = []
+    for ticker, news in hits.items():
+        name = WATCHLIST[ticker][0]
+        try:
+            hist = yf.Ticker(ticker).history(period="7d", interval="1d", auto_adjust=True)
+            ch = _changes_from_series(hist["Close"]) if not hist.empty else None
+            if not ch:
+                print(f"  WARN spotlight {ticker}: brak danych cenowych")
+                continue
+            spotlight.append({"ticker": ticker, "name": name, **ch, "news": news[:4]})
+        except Exception as e:
+            print(f"  WARN spotlight {ticker}: {e}")
+
+    print(f"  Spotlight: wyceny dla {len(spotlight)} spolek")
+    return spotlight
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +247,7 @@ Zasady:
 - Odpowiedz TYLKO czystym JSON bez markdown, bez ```.
 """.replace("__CONTEXT_DATE__", _pl_month_year(datetime.now(timezone.utc)))
 
-def build_prompt(market: dict, events: list[dict]) -> str:
+def build_prompt(market: dict, events: list[dict], spotlight: list[dict]) -> str:
     # Grupuj dane rynkowe
     market_lines = []
     for group in ["indeksy", "surowce", "crypto", "waluty", "akcje"]:
@@ -183,14 +270,26 @@ def build_prompt(market: dict, events: list[dict]) -> str:
         waga = {"high": "❗", "medium": "·", "low": "·"}.get(e.get("waga", ""), "·")
         news_lines.append(f"{waga} [{dt}] {e['haslo']}")
 
+    # Spolki wykryte automatycznie w newsach (news -> ticker)
+    spotlight_lines = []
+    for s in spotlight:
+        spotlight_lines.append(
+            f"\n{s['name']} ({s['ticker']}): cena={s['price']}  "
+            f"1D={s['change_1d']:+.2f}%  3D={s['change_3d']:+.2f}%  5D={s['change_5d']:+.2f}%"
+        )
+        for h in s["news"]:
+            spotlight_lines.append(f"    • news: {h}")
+
     payload = {
         "task": (
             "Przeanalizuj dane rynkowe z ostatnich 5 dni roboczych "
             "w kontekście newsów z ostatnich 72 godzin. "
-            "Zidentyfikuj trendy, korelacje i sygnały istotne dla tradera."
+            "Zidentyfikuj trendy, korelacje i sygnały istotne dla tradera. "
+            "Dla SPOLEK_WZMIANKOWANYCH powiąż KONKRETNY news z reakcją ceny spółki."
         ),
         "market_data": "\n".join(market_lines),
         "news_72h": "\n".join(news_lines),
+        "spolki_wzmiankowane": "\n".join(spotlight_lines) or "(brak)",
         "output_format": {
             "naglowek": "1 zdanie — najważniejszy wniosek z całości",
             "trendy": [
@@ -198,6 +297,14 @@ def build_prompt(market: dict, events: list[dict]) -> str:
             ],
             "korelacje": [
                 "lista 2-4 korelacji news↔rynek które są nieoczywiste lub zaskakujące"
+            ],
+            "spolki": [
+                {
+                    "ticker": "symbol, np. NVDA",
+                    "spolka": "nazwa spółki",
+                    "ekspozycja": "pozytywna | negatywna | neutralna — wpływ newsa na spółkę",
+                    "uzasadnienie": "1 zdanie: który news i dlaczego, z odniesieniem do ruchu ceny (1D/3D/5D). BEZ rekomendacji kup/sprzedaj."
+                }
             ],
             "uwaga": "1-2 zdania — co ignorować (szum), gdzie skupić uwagę",
             "sygnaly": [
@@ -289,8 +396,11 @@ def main():
     events = load_recent_events(72)
     print(f"  Znaleziono {len(events)} newsów")
 
-    print("  Krok 3: analiza Gemini...")
-    prompt   = build_prompt(market, events)
+    print("  Krok 3: spolki wzmiankowane w newsach...")
+    spotlight = fetch_spotlight(events)
+
+    print("  Krok 4: analiza Gemini...")
+    prompt   = build_prompt(market, events, spotlight)
     analysis = call_gemini(prompt)
 
     out = {
@@ -298,6 +408,7 @@ def main():
         "period_days":  5,
         "events_count": len(events),
         "market":       market,
+        "spotlight":    spotlight,
         "analysis":     analysis,
     }
 
