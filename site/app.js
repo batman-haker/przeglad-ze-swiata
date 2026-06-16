@@ -8,6 +8,8 @@ const SPOTLIGHT_LABEL = 'Konflikt Iran / Ormuz';
 let allEvents = [];
 let activeFilter = 'all';
 let searchQuery  = '';
+let timelineLimit = 200;        // ile kart pokazac (z przyciskiem "pokaż więcej")
+const TIMELINE_PAGE = 200;
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -37,7 +39,7 @@ async function init() {
   try {
     const resp = await fetch('events.json?v=' + Date.now());
     if (!resp.ok) throw new Error('Brak events.json');
-    allEvents = (await resp.json()).slice(0, 300);
+    allEvents = await resp.json();   // pełne archiwum (paginacja na widoku)
   } catch (e) {
     document.getElementById('timeline').innerHTML =
       `<div class="no-results">Nie można załadować danych.<br><small>${e.message}</small></div>`;
@@ -100,6 +102,7 @@ function setupFilters() {
     if (!btn) return;
     activeFilter = btn.dataset.filter;
     updateFilterButtons();
+    timelineLimit = TIMELINE_PAGE;
     renderTimeline();
   });
 }
@@ -117,6 +120,7 @@ function setupSearch() {
     clearTimeout(timer);
     timer = setTimeout(() => {
       searchQuery = input.value.trim().toLowerCase();
+      timelineLimit = TIMELINE_PAGE;
       renderTimeline();
     }, 220);
   });
@@ -148,14 +152,16 @@ function filtered() {
 // ============================================================
 
 function renderTimeline() {
-  const events = filtered();
+  const all = filtered();
   const timeline = document.getElementById('timeline');
   timeline.innerHTML = '';
 
-  if (!events.length) {
+  if (!all.length) {
     timeline.innerHTML = '<div class="no-results">Brak wyników.</div>';
     return;
   }
+
+  const events = all.slice(0, timelineLimit);
 
   const groups = new Map();
   events.forEach(e => {
@@ -176,6 +182,18 @@ function renderTimeline() {
     dayEvents.forEach(e => group.appendChild(buildCard(e)));
     timeline.appendChild(group);
   });
+
+  // Paginacja — "pokaż więcej"
+  if (all.length > timelineLimit) {
+    const more = document.createElement('button');
+    more.className = 'load-more';
+    more.textContent = `Pokaż więcej (${all.length - timelineLimit} z ${all.length})`;
+    more.addEventListener('click', () => {
+      timelineLimit += TIMELINE_PAGE;
+      renderTimeline();
+    });
+    timeline.appendChild(more);
+  }
 }
 
 function formatDay(isoDate) {

@@ -23,6 +23,11 @@ if [ -f ".venv/bin/activate" ]; then
     source .venv/bin/activate
 fi
 
+# 0. Auto-restore archiwum z backupu jesli biezacy plik jest ubozszy
+#    (np. po re-clone deploy, ktory cofnal events.json). Niekrytyczne.
+log "Krok 0: archive_guard restore"
+python3 scripts/archive_guard.py restore >> "$LOG_FILE" 2>&1 || log "  UWAGA: restore nieudany"
+
 # 1. Pobierz nowe posty
 log "Krok 1: fetch.py"
 python3 scripts/fetch.py >> "$LOG_FILE" 2>&1
@@ -46,6 +51,10 @@ if python3 scripts/backtest.py >> "$LOG_FILE" 2>&1; then
 else
     log "  UWAGA: backtest.py nieudane (pomijam)"
 fi
+
+# 5. Backup archiwum poza katalog repo (przezywa re-clone deploy). Niekrytyczny.
+log "Krok 5: archive_guard backup"
+python3 scripts/archive_guard.py backup >> "$LOG_FILE" 2>&1 || log "  UWAGA: backup nieudany"
 
 log "=== PIPELINE ZAKONCZONY ==="
 

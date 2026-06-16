@@ -950,6 +950,22 @@ body::before {
 .bt-tab td.pos { color: #10b981; font-weight: 600; }
 .bt-tab td.neg { color: #ef4444; font-weight: 600; }
 
+/* ---- Pokaż więcej (paginacja tablicy) ---- */
+.load-more {
+  display: block;
+  margin: 1.5rem auto;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--accent-hi);
+  border-radius: 8px;
+  padding: .7rem 1.6rem;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.load-more:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
 @media (max-width: 600px) {
   .mkt-instruments { grid-template-columns: 1fr 1fr; }
 }

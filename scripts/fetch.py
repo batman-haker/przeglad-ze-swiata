@@ -34,7 +34,8 @@ BASE_URL = "https://api.twitterapi.io/twitter/user/last_tweets"
 RAW_OUT = ROOT / "data" / "fetched_raw.json"
 POSTS_OUT = ROOT / "data" / "fetched_posts.txt"
 
-LOOKBACK_DAYS = 4  # fetched_posts.txt zawiera tweety z ostatnich N dni
+LOOKBACK_DAYS = 8  # fetched_posts.txt zawiera tweety z ostatnich N dni
+                   # (8 dni + 6 stron ponizej = krotkie przerwy nie robia luk w archiwum)
 
 
 def fetch_page(cursor: str = "") -> dict:
@@ -97,7 +98,7 @@ def main():
         sys.exit(1)
 
     fetch_all = "--all" in sys.argv
-    max_pages = 99999 if fetch_all else 3
+    max_pages = 99999 if fetch_all else 6
     for arg in sys.argv[1:]:
         if arg.startswith("--pages"):
             try:
