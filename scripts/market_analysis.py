@@ -38,26 +38,41 @@ GEMINI_URL   = (
 
 INSTRUMENTS = {
     # Indeksy
-    "SPX":    {"ticker": "^GSPC",   "name": "S&P 500",    "group": "indeksy"},
-    "NDX":    {"ticker": "^IXIC",   "name": "Nasdaq",     "group": "indeksy"},
-    "DAX":    {"ticker": "^GDAXI",  "name": "DAX",        "group": "indeksy"},
-    "WIG20":  {"ticker": "WIG20.WA","name": "WIG20",      "group": "indeksy"},
+    "SPX":    {"ticker": "^GSPC",    "name": "S&P 500",          "group": "indeksy"},
+    "NDX":    {"ticker": "^IXIC",    "name": "Nasdaq",           "group": "indeksy"},
+    "WIG20":  {"ticker": "ETFBW20TR.WA", "name": "WIG20 (ETF)",  "group": "indeksy"},
+    "VIX":    {"ticker": "^VIX",     "name": "VIX (zmienność)",  "group": "indeksy"},
     # Surowce
-    "GOLD":   {"ticker": "GC=F",    "name": "Złoto",      "group": "surowce"},
-    "OIL":    {"ticker": "CL=F",    "name": "Ropa WTI",   "group": "surowce"},
-    "SILVER": {"ticker": "SI=F",    "name": "Srebro",     "group": "surowce"},
-    "COPPER": {"ticker": "HG=F",    "name": "Miedź",      "group": "surowce"},
+    "GOLD":   {"ticker": "GC=F",     "name": "Złoto",   "group": "surowce"},
+    "SILVER": {"ticker": "SI=F",     "name": "Srebro",  "group": "surowce"},
+    "OIL":    {"ticker": "CL=F",     "name": "Ropa WTI","group": "surowce"},
     # Crypto
-    "BTC":    {"ticker": "BTC-USD", "name": "Bitcoin",    "group": "crypto"},
-    "ETH":    {"ticker": "ETH-USD", "name": "Ethereum",   "group": "crypto"},
+    "BTC":    {"ticker": "BTC-USD",  "name": "Bitcoin", "group": "crypto"},
+    "ETH":    {"ticker": "ETH-USD",  "name": "Ethereum","group": "crypto"},
     # Waluty
-    "USDPLN": {"ticker": "USDPLN=X","name": "USD/PLN",   "group": "waluty"},
-    "EURUSD": {"ticker": "EURUSD=X","name": "EUR/USD",   "group": "waluty"},
-    # Spółki kluczowe
-    "NVDA":   {"ticker": "NVDA",    "name": "Nvidia",     "group": "akcje"},
-    "TSLA":   {"ticker": "TSLA",    "name": "Tesla",      "group": "akcje"},
-    "MSFT":   {"ticker": "MSFT",    "name": "Microsoft",  "group": "akcje"},
-    "KGHM":   {"ticker": "KGH.WA",  "name": "KGHM",       "group": "akcje"},
+    "USDPLN": {"ticker": "USDPLN=X", "name": "USD/PLN", "group": "waluty"},
+    # ETF-y
+    "QQQ":    {"ticker": "QQQ",      "name": "QQQ (Nasdaq 100)",     "group": "etf"},
+    "TQQQ":   {"ticker": "TQQQ",     "name": "TQQQ (3x Nasdaq)",     "group": "etf"},
+    "TLT":    {"ticker": "TLT",      "name": "TLT (obligacje 20Y+)", "group": "etf"},
+    "COPX":   {"ticker": "COPX",     "name": "COPX (górnicy miedzi)","group": "etf"},
+    # Akcje
+    "NVDA":   {"ticker": "NVDA",     "name": "Nvidia",        "group": "akcje"},
+    "TSLA":   {"ticker": "TSLA",     "name": "Tesla",         "group": "akcje"},
+    "AMD":    {"ticker": "AMD",      "name": "AMD",           "group": "akcje"},
+    "AMZN":   {"ticker": "AMZN",     "name": "Amazon",        "group": "akcje"},
+    "META":   {"ticker": "META",     "name": "Meta",          "group": "akcje"},
+    "KGHM":   {"ticker": "KGH.WA",   "name": "KGHM",          "group": "akcje"},
+    "XTB":    {"ticker": "XTB.WA",   "name": "XTB",           "group": "akcje"},
+    "VST":    {"ticker": "VST",      "name": "Vistra",        "group": "akcje"},
+    "TLN":    {"ticker": "TLN",      "name": "Talen Energy",  "group": "akcje"},
+    "NVO":    {"ticker": "NVO",      "name": "Novo Nordisk",  "group": "akcje"},
+    "AVAV":   {"ticker": "AVAV",     "name": "AeroVironment", "group": "akcje"},
+    "MP":     {"ticker": "MP",       "name": "MP Materials",  "group": "akcje"},
+    "NBIS":   {"ticker": "NBIS",     "name": "Nebius",        "group": "akcje"},
+    "CEVA":   {"ticker": "CEVA",     "name": "Ceva",          "group": "akcje"},
+    "VPG":    {"ticker": "VPG",      "name": "Vishay PG",     "group": "akcje"},
+    "SPCX":   {"ticker": "SPCX",     "name": "SpaceX",        "group": "akcje"},
 }
 
 # ---------------------------------------------------------------------------
@@ -83,6 +98,17 @@ WATCHLIST = {
     "MU":      ("Micron",        ["micron"]),
     "COIN":    ("Coinbase",      ["coinbase"]),
     "MSTR":    ("MicroStrategy", ["microstrategy"]),
+    "SPCX":    ("SpaceX",        ["spacex", "starlink"]),
+    "NVO":     ("Novo Nordisk",  ["novo nordisk", "ozempic", "wegovy"]),
+    "AVAV":    ("AeroVironment", ["aerovironment"]),
+    "MP":      ("MP Materials",  ["mp materials", "metale ziem rzadkich", "ziem rzadkich"]),
+    "NBIS":    ("Nebius",        ["nebius"]),
+    "CEVA":    ("Ceva",          ["ceva"]),
+    "VPG":     ("Vishay PG",     ["vishay"]),
+    "VST":     ("Vistra",        ["vistra"]),
+    "TLN":     ("Talen Energy",  ["talen"]),
+    "XTB.WA":  ("XTB",           ["xtb"]),
+    "KGH.WA":  ("KGHM",          ["kghm"]),
     "JSW.WA":  ("JSW",           ["jsw"]),
     "ZAB.WA":  ("Żabka",         ["żabka", "zabka"]),
 }
@@ -250,7 +276,7 @@ Zasady:
 def build_prompt(market: dict, events: list[dict], spotlight: list[dict]) -> str:
     # Grupuj dane rynkowe
     market_lines = []
-    for group in ["indeksy", "surowce", "crypto", "waluty", "akcje"]:
+    for group in ["indeksy", "surowce", "crypto", "waluty", "etf", "akcje"]:
         items = [(k, v) for k, v in market.items() if v["group"] == group]
         if not items:
             continue

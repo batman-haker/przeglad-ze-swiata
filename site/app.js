@@ -265,7 +265,7 @@ async function renderMarketAnalysis() {
     </div>`;
 
   // — Tabela instrumentów pogrupowana —
-  const groups = { indeksy: 'Indeksy', surowce: 'Surowce', crypto: 'Crypto', waluty: 'Waluty', akcje: 'Akcje' };
+  const groups = { indeksy: 'Indeksy', surowce: 'Surowce', crypto: 'Crypto', waluty: 'Waluty', etf: 'ETF-y', akcje: 'Akcje' };
   html += `<div class="mkt-instruments">`;
   for (const [gKey, gLabel] of Object.entries(groups)) {
     const items = Object.values(market).filter(m => m.group === gKey);
