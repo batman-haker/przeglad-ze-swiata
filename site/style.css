@@ -1252,3 +1252,42 @@ body::before {
   color: var(--accent-hi);
 }
 
+/* ============================================================
+   Mobile — dopracowanie pod telefony (nowe komponenty + UX)
+   ============================================================ */
+@media (max-width: 600px) {
+  /* Film w naglowku: nizszy, zeby nie zajmowal pol ekranu */
+  .site-banner video.banner-logo { max-height: 40vh; }
+
+  /* Analiza rynku — panele wezsze, mniej paddingu */
+  .mkt-wrap, .bt-wrap { padding: .6rem; }
+  .mkt-score, .bt-stats, .mkt-spolki { padding: .8rem .9rem; }
+
+  /* Spolki na celowniku: jedna kolumna */
+  .mkt-spolki-grid { grid-template-columns: 1fr; }
+
+  /* Skutecznosc sygnalow: stack + zwarta tabela */
+  .score-top { gap: .8rem; }
+  .score-num { font-size: 1.7rem; }
+  .score-tab th, .score-tab td { padding: .3rem .35rem; font-size: .72rem; }
+  .score-tab th { font-size: .62rem; }
+
+  /* Backtest: nizszy wykres, mniejsze przyciski, zwarta tabela */
+  .bt-intro h2 { font-size: 1rem; }
+  .bt-chart-box { height: 300px; padding: .6rem; }
+  .bt-btn { padding: .35rem .7rem; font-size: .8rem; }
+  .bt-tab th, .bt-tab td { padding: .35rem .4rem; font-size: .8rem; }
+
+  /* Karta newsa: lzejsze odstepy */
+  .card-main { padding: .6rem .7rem; gap: .5rem; }
+  .card-tags { gap: .3rem; }
+
+  /* Tabela instrumentow: jedna kolumna na bardzo waskich ekranach mqs */
+  .mkt-item { min-width: 0; }
+}
+
+@media (max-width: 380px) {
+  .mkt-instruments { grid-template-columns: 1fr; }
+  .score-tab th:nth-child(3), .score-tab td:nth-child(3) { display: none; } /* ukryj "ekspozycja" - jest w badge'u spolki */
+}
+
