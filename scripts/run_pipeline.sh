@@ -39,6 +39,14 @@ else
     log "  UWAGA: market_analysis.py nieudane (pomijam, newsy bez zmian)"
 fi
 
+# 4. Backtest (newsy nalozone na historyczne ceny). Niekrytyczny.
+log "Krok 4: backtest.py"
+if python3 scripts/backtest.py >> "$LOG_FILE" 2>&1; then
+    log "  backtest OK"
+else
+    log "  UWAGA: backtest.py nieudane (pomijam)"
+fi
+
 log "=== PIPELINE ZAKONCZONY ==="
 
 # Usun logi starsze niz 14 dni

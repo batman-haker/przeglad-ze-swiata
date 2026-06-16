@@ -69,6 +69,7 @@ function setupViewNav() {
 
       if (view === 'analiza') { renderAnaliza(); }
       if (view === 'market')  { renderMarketAnalysis(); }
+      if (view === 'backtest') { renderBacktest(); }
       if (view === 'iran')    { renderIran(); }
       if (view === 'makro')   { renderMakro(); }
       if (view === 'rynki')    { renderRynki(); }
@@ -399,6 +400,133 @@ async function renderMarketAnalysis() {
   html += `</div>`;
 
   container.innerHTML = html;
+}
+
+// ============================================================
+// Backtest — newsy nałożone na historyczne ceny
+// ============================================================
+let backtestInit = false;
+let backtestData = null;
+let backtestChart = null;
+
+async function renderBacktest() {
+  if (backtestInit) return;
+  backtestInit = true;
+
+  const container = document.getElementById('bt-container');
+  try {
+    await loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js');
+    const r = await fetch('backtest.json?v=' + Date.now());
+    if (!r.ok) throw new Error('Brak backtest.json');
+    backtestData = await r.json();
+  } catch (e) {
+    container.innerHTML = `<div class="no-results">Nie można załadować backtestu.<br><small>${e.message}</small></div>`;
+    backtestInit = false;
+    return;
+  }
+
+  const insts = backtestData.instruments || [];
+  if (!insts.length) { container.innerHTML = `<div class="no-results">Brak danych.</div>`; return; }
+
+  container.innerHTML = `
+    <div class="bt-intro">
+      <h2>📉 Backtest — jak rynek reagował na newsy</h2>
+      <p>Mocne newsy (waga <b>high</b>) tematycznie dopasowane do instrumentu, nałożone na historię cen.
+      Poniżej: średnia reakcja ceny po dniach z newsem vs zwykła sesja (baseline).</p>
+      <p class="bt-warn">⚠️ Analiza opisowa na małej próbce (~5 tygodni, dane dzienne) — pokazuje co się wydarzyło, nie przewiduje przyszłości.</p>
+    </div>
+    <div id="bt-selector" class="bt-selector"></div>
+    <div class="bt-chart-box"><canvas id="bt-chart"></canvas></div>
+    <div id="bt-stats" class="bt-stats"></div>
+    <div id="bt-markers" class="bt-markers"></div>`;
+
+  const sel = document.getElementById('bt-selector');
+  insts.forEach((inst, idx) => {
+    const b = document.createElement('button');
+    b.className = 'bt-btn' + (idx === 0 ? ' active' : '');
+    b.textContent = inst.name;
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.bt-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      drawBacktest(inst);
+    });
+    sel.appendChild(b);
+  });
+
+  drawBacktest(insts[0]);
+}
+
+function drawBacktest(inst) {
+  const canvas = document.getElementById('bt-chart');
+  if (backtestChart) { backtestChart.destroy(); backtestChart = null; }
+
+  const markerByIdx = {};
+  (inst.markers || []).forEach(m => { markerByIdx[m.i] = m; });
+  const markerData = inst.close.map((c, i) => markerByIdx[i] ? c : null);
+
+  backtestChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: inst.dates,
+      datasets: [
+        {
+          label: inst.name,
+          data: inst.close,
+          borderColor: 'rgba(59,130,246,.9)',
+          backgroundColor: 'rgba(59,130,246,.08)',
+          borderWidth: 2, pointRadius: 0, tension: .25, fill: true,
+        },
+        {
+          label: 'Mocny news',
+          data: markerData,
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(245,158,11,.95)',
+          pointRadius: 6, pointHoverRadius: 8, pointStyle: 'circle',
+          showLine: false,
+        },
+      ],
+    },
+    options: {
+      animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#8892a4', usePointStyle: true, font: { size: 11 } } },
+        tooltip: { callbacks: {
+          title: items => items[0].label,
+          label: item => {
+            if (item.datasetIndex === 1) {
+              const m = markerByIdx[item.dataIndex];
+              return m ? [`📰 ${m.count} mocnych newsów:`, ...m.hasla.map(h => '• ' + h)] : '';
+            }
+            return `${inst.name}: ${item.raw}`;
+          },
+        }},
+      },
+      scales: {
+        x: { ticks: { color: '#8892a4', font: { size: 10 }, maxTicksLimit: 12 }, grid: { color: '#2a2f42' } },
+        y: { ticks: { color: '#8892a4' }, grid: { color: '#2a2f42' } },
+      },
+    },
+  });
+
+  // Statystyka reakcji
+  const s = inst.stats;
+  const fmt = v => (v === null || v === undefined) ? '—' : (v >= 0 ? '+' : '') + v + '%';
+  const cls = v => (v === null || v === undefined) ? '' : (v >= 0 ? 'pos' : 'neg');
+  const row = (label, o) => `
+    <tr><td>${label}</td>
+      <td class="${cls(o.r1)}">${fmt(o.r1)}</td>
+      <td class="${cls(o.r3)}">${fmt(o.r3)}</td>
+      <td class="${cls(o.r5)}">${fmt(o.r5)}</td></tr>`;
+  document.getElementById('bt-stats').innerHTML = `
+    <div class="bt-stats-title">Średnia reakcja ceny — ${inst.name} <small>(${s.news_days} dni z mocnym newsem)</small></div>
+    <table class="bt-tab">
+      <thead><tr><th></th><th>+1 sesja</th><th>+3 sesje</th><th>+5 sesji</th></tr></thead>
+      <tbody>
+        ${row('Po dniu z newsem', s.after_news)}
+        ${row('Baseline (każda sesja)', s.baseline)}
+      </tbody>
+    </table>`;
 }
 
 async function renderAnaliza() {
