@@ -31,6 +31,14 @@ python3 scripts/fetch.py >> "$LOG_FILE" 2>&1
 log "Krok 2: build.py"
 python3 scripts/build.py data/fetched_posts.txt >> "$LOG_FILE" 2>&1
 
+# 3. Analiza rynkowa (newsy + ceny -> AI). Niekrytyczna: blad NIE przerywa pipeline.
+log "Krok 3: market_analysis.py"
+if python3 scripts/market_analysis.py >> "$LOG_FILE" 2>&1; then
+    log "  market_analysis OK"
+else
+    log "  UWAGA: market_analysis.py nieudane (pomijam, newsy bez zmian)"
+fi
+
 log "=== PIPELINE ZAKONCZONY ==="
 
 # Usun logi starsze niz 14 dni
