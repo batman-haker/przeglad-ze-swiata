@@ -187,7 +187,6 @@ function buildCard(event) {
   card.className = 'event-card';
   card.dataset.id = event.id;
 
-  const time     = event.datetime.slice(11, 16);
   const podmiotyChips = (event.podmioty || []).slice(0, 3)
     .map(p => `<span class="tag-podmioty" data-entity="${esc(p)}">${esc(p)}</span>`)
     .join('');
@@ -208,7 +207,6 @@ function buildCard(event) {
           ${podmiotyChips}
         </div>
       </div>
-      <span class="card-time">${time}</span>
       <span class="card-arrow">▾</span>
     </div>
     <div class="card-detail">

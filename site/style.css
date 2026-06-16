@@ -380,12 +380,6 @@ body::before {
   color: var(--text-dim);
 }
 
-.card-time {
-  font-size: .72rem;
-  color: var(--text-dim);
-  flex-shrink: 0;
-  padding-top: .15rem;
-}
 .card-arrow {
   font-size: .75rem;
   color: var(--text-dim);
